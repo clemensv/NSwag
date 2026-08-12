@@ -18,6 +18,25 @@ NSwag recognizes these canonical JSON Structure meta-schema URIs exactly, includ
 
 The `Extended` and `Validation` dialects offer the following add-ins through `$uses`: `JSONStructureImport`, `JSONStructureValidation`, `JSONStructureConditionalComposition`, `JSONStructureAlternateNames`, and `JSONStructureUnits`. `Validation` activates all of these add-ins by default. Conditional-composition keywords are validation-only and do not change generated type shapes.
 
+## Conformance scope
+
+NSwag currently implements a broad **Core syntax and type-model subset**, not
+full JSON Structure Core conformance. The parser and model cover the Core
+primitive and compound types, namespaces, definitions, references, `$root`,
+`$extends`, abstract types, unions, choices, tuples, sets, maps, and the Core
+structural keywords. The official meta-schemas are not interpreted generically;
+validation is implemented as a rule-based validator and should therefore be
+treated as a useful diagnostic pass rather than a complete conformance oracle.
+
+Some semantics are preserved in the model but are only partially reflected in
+generated code. In particular, validation constraints and alternative required
+sets are not fully enforced at runtime, binary encoding/compression annotations
+are not implemented across every serializer, and arbitrary multi-member C#
+unions are not losslessly serializable. `float8`, wide numerics, decimal,
+duration, and binary mappings are supported only within the documented
+serializer-specific limits. `$import` and `$importdefs` are add-in features,
+not Core features, and are policy-controlled and disabled by default.
+
 ## Import security and offline defaults
 
 JSON Structure `$import` and `$importdefs` are disabled by default. The default policy is offline and has these limits:
@@ -179,13 +198,14 @@ Use the generated serializer options or converters in the same way as the select
 
 | Capability | Status | Notes |
 |---|---|---|
-| Read canonical Core, Extended, and Validation dialects | Supported | Canonical `$schema` URI matching is exact |
+| Parse canonical Core, Extended, and Validation dialects | Supported with restrictions | Core syntax and the implemented add-in rules are covered; this is not a claim of complete meta-schema conformance |
 | Read explicitly allowlisted derived dialects | Supported | The caller must register the URI |
-| Parse definitions, references, objects, arrays, sets, maps, tuples, choices, and hierarchies | Supported | Shapes are preserved in the JSON Structure model |
+| Parse Core definitions, references, objects, arrays, sets, maps, tuples, choices, and hierarchies | Supported at the model level | Core shapes are preserved; generated runtime validation and all wire semantics are not complete |
+| Complete JSON Structure Core meta-schema conformance | Not claimed | Validation is rule-based rather than a generic meta-schema interpreter |
 | Resolve local and imported definitions | Supported with policy | Imports are disabled by default and remain size- and timeout-limited |
 | Generate JSON Structure schemas from ASP.NET Core types | Supported | Select `SchemaDialect=JsonStructure` |
-| Generate C# contracts | Supported | Use `openapi2csclient` with JSON Structure input |
-| Generate TypeScript contracts | Supported | Use `openapi2tsclient` with JSON Structure input |
+| Generate C# contracts | Supported with restrictions | Use `openapi2csclient`; serializer and union limitations apply |
+| Generate TypeScript contracts | Supported with restrictions | Use `openapi2tsclient`; TypeScript types are emitted, not a runtime serializer |
 | Read JSON Structure in OpenAPI 3.1 | Supported | `jsonSchemaDialect` and schema-level dialects are handled |
 | Read JSON Structure in Swagger 2.0 | Not supported | JSON Structure processing is intentionally limited to OpenAPI 3.1 |
 | Read JSON Structure in OpenAPI 3.0 | Not supported | Use OpenAPI 3.1 for JSON Structure documents |
