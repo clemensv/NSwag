@@ -117,6 +117,33 @@ namespace NSwag.JsonStructure.Tests
         }
 
         [Fact]
+        public void Derived_meta_schema_requires_explicit_registration_and_preserves_base_dialect()
+        {
+            var document = JObject.Parse("""
+                {
+                  "openapi": "3.1.0",
+                  "jsonSchemaDialect": "https://json-structure.org/meta/company/v1/#",
+                  "info": { "title": "Derived", "version": "1.0.0" },
+                  "paths": {},
+                  "components": {
+                    "schemas": {
+                      "Telemetry": { "type": "object", "properties": { "id": { "type": "uint64" } } }
+                    }
+                  }
+                }
+                """);
+
+            Assert.Throws<JsonStructureException>(() =>
+                new JsonStructureDocumentPreprocessor().Preprocess(document, "https://example.com/api.yaml"));
+
+            var settings = new JsonStructureSettings();
+            settings.RegisterDerivedMetaSchema("https://json-structure.org/meta/company/v1/#", JsonStructureDialect.Core);
+            var result = new JsonStructureDocumentPreprocessor(settings).Preprocess(document, "https://example.com/api.yaml");
+
+            Assert.Equal(JsonStructureDialect.Core, result.LiftedSchemas["#/components/schemas/Telemetry"].Dialect);
+        }
+
+        [Fact]
         public void Default_id_is_base_uri_with_schema_pointer_fragment()
         {
             var document = JObject.Parse("""

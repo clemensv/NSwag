@@ -14,7 +14,7 @@ NSwag recognizes these canonical JSON Structure meta-schema URIs exactly, includ
 | `Extended` | `https://json-structure.org/meta/extended/v0/#` | Core plus the import add-in |
 | `Validation` | `https://json-structure.org/meta/validation/v0/#` | Extended plus validation, conditional composition, alternate names, and units |
 
-`Extended` is the default dialect for JSON Structure settings. An unknown URI in the `https://json-structure.org/` namespace is rejected; NSwag does not silently treat it as ordinary JSON Schema. Derived meta-schemas must be added to `JsonStructureDerivedMetaSchemaAllowlist` (or `JsonStructureSettings.DerivedMetaSchemaAllowlist`). URI matching is exact.
+`Extended` is the default dialect for JSON Structure settings. An unknown URI in the `https://json-structure.org/` namespace is rejected; NSwag does not silently treat it as ordinary JSON Schema. Derived meta-schemas must be explicitly registered with their confirmed base dialect through `JsonStructureSettings.RegisterDerivedMetaSchema` (or added to the legacy `JsonStructureDerivedMetaSchemaAllowlist`, which uses the configured default dialect). URI matching is exact.
 
 The `Extended` and `Validation` dialects offer the following add-ins through `$uses`: `JSONStructureImport`, `JSONStructureValidation`, `JSONStructureConditionalComposition`, `JSONStructureAlternateNames`, and `JSONStructureUnits`. `Validation` activates all of these add-ins by default. Conditional-composition keywords are validation-only and do not change generated type shapes.
 
@@ -123,6 +123,12 @@ NSwag lifts JSON Structure schemas before normal OpenAPI deserialization and ret
 `OpenApi31JsonStructure` writes an OpenAPI 3.1 JSON or YAML document, adds `openapi: 3.1.0`, and writes the common JSON Structure URI as `jsonSchemaDialect`. It removes the internal JSON Structure placeholders and restores the original schema JSON.
 
 The document must contain only JSON Structure schemas, every lifted schema must be represented, and all lifted schemas must use one common dialect. A mixed document or a document with multiple dialects is rejected. OpenAPI 3.1 JSON Structure output deliberately has no Swagger 2.0 or OpenAPI 3.0 downgrade. JSON Structure keywords and types cannot be represented faithfully by those older schema dialects, so NSwag fails rather than silently losing information.
+
+When extracting a Schema Object from OpenAPI context, NSwag applies the binding's
+dialect precedence and materializes missing `$schema`, `$id`, and root `name`
+values. `$id` is derived from the OpenAPI `$self` or retrieval URI plus the
+Schema Object's JSON Pointer; extraction without either a base URI or an
+explicit `$id` is rejected.
 
 ## Generated type shapes
 
