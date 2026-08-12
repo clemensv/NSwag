@@ -19,6 +19,8 @@ namespace NSwag.JsonStructure.Model
         private readonly Dictionary<string, JsonStructureProperty> _propertyIndex = new(StringComparer.Ordinal);
         private readonly List<JsonStructureChoice> _choices = [];
         private readonly List<JsonStructureTypeReference> _union = [];
+        private readonly List<string> _extendsPointers = [];
+        private readonly List<JsonStructureNamedType> _resolvedExtends = [];
         private readonly List<IReadOnlyList<string>> _requiredSets = [];
         private readonly List<string> _tupleOrder = [];
         private readonly List<object> _enumeration = [];
@@ -43,6 +45,12 @@ namespace NSwag.JsonStructure.Model
 
         /// <summary>Gets or sets the base type named by <c>$extends</c>, once resolved.</summary>
         public JsonStructureNamedType ResolvedExtends { get; set; }
+
+        /// <summary>Gets all base type pointers declared by <c>$extends</c>, in order.</summary>
+        public IReadOnlyList<string> ExtendsPointers => _extendsPointers;
+
+        /// <summary>Gets all resolved base types declared by <c>$extends</c>, in order.</summary>
+        public IReadOnlyList<JsonStructureNamedType> ResolvedExtendsTypes => _resolvedExtends;
 
         /// <summary>Gets the members of a non-discriminated type union when <c>type</c> is an array.</summary>
         public IReadOnlyList<JsonStructureTypeReference> Union => _union;
@@ -87,6 +95,25 @@ namespace NSwag.JsonStructure.Model
 
         /// <summary>Gets or sets the <c>$extends</c> JSON Pointer of this type.</summary>
         public string Extends { get; set; }
+
+        /// <summary>Adds a base type pointer. The first pointer is also exposed through <see cref="Extends"/> for compatibility.</summary>
+        public void AddExtends(string pointer)
+        {
+            if (pointer == null)
+            {
+                throw new ArgumentNullException(nameof(pointer));
+            }
+
+            _extendsPointers.Add(pointer);
+            Extends ??= pointer;
+        }
+
+        /// <summary>Adds a resolved base type.</summary>
+        public void AddResolvedExtends(JsonStructureNamedType type)
+        {
+            _resolvedExtends.Add(type ?? throw new ArgumentNullException(nameof(type)));
+            ResolvedExtends ??= type;
+        }
 
         /// <summary>Gets or sets a value indicating whether the type is abstract.</summary>
         public bool IsAbstract { get; set; }

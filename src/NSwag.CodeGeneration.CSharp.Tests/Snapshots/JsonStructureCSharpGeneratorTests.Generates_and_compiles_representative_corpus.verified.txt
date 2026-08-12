@@ -38,6 +38,8 @@ namespace Corpus.Generated
             settings.Converters.Add(new NullableDecimalStringConverter());
             settings.Converters.Add(new TimeSpanIso8601Converter());
             settings.Converters.Add(new NullableTimeSpanIso8601Converter());
+            settings.Converters.Add(new BinaryBase64UrlConverter());
+            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
     }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
@@ -131,6 +133,31 @@ namespace Corpus.Generated
             foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
             writer.WriteEndArray();
         }
+    }
+
+    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var value = (string)reader.Value ?? string.Empty;
+            value = value.Replace('-', '+').Replace('_', '/');
+            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
+            return global::System.Convert.FromBase64String(value);
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
+    }
+    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var text = (string)reader.Value ?? string.Empty;
+            var bytes = new byte[text.Length / 2];
+            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
+            return bytes;
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 
@@ -175,6 +202,7 @@ namespace Corpus.Generated
     {
     }
 
+    [global::Newtonsoft.Json.JsonConverter(typeof(EntityChoiceJsonConverter))]
     public partial class EntityChoice
     {
         public BaseEntity Value { get; set; }
@@ -197,6 +225,8 @@ namespace Corpus.Generated
             settings.Converters.Add(new NullableDecimalStringConverter());
             settings.Converters.Add(new TimeSpanIso8601Converter());
             settings.Converters.Add(new NullableTimeSpanIso8601Converter());
+            settings.Converters.Add(new BinaryBase64UrlConverter());
+            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
     }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
@@ -292,11 +322,38 @@ namespace Corpus.Generated
         }
     }
 
+    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var value = (string)reader.Value ?? string.Empty;
+            value = value.Replace('-', '+').Replace('_', '/');
+            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
+            return global::System.Convert.FromBase64String(value);
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
+    }
+    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var text = (string)reader.Value ?? string.Empty;
+            var bytes = new byte[text.Length / 2];
+            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
+            return bytes;
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
+    }
+
     public sealed class EntityChoiceJsonConverter : global::Newtonsoft.Json.JsonConverter<EntityChoice>
     {
         public override EntityChoice ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, EntityChoice existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
         {
-            var objectValue = global::Newtonsoft.Json.Linq.JObject.Load(reader);        throw new global::Newtonsoft.Json.JsonSerializationException("No known variant property found for EntityChoice.");
+            var objectValue = global::Newtonsoft.Json.Linq.JObject.Load(reader);        if (objectValue.Property("age") != null) return new EntityChoice { Value = objectValue.ToObject<Person>(serializer)! };
+            if (objectValue.Property("employees") != null) return new EntityChoice { Value = objectValue.ToObject<Company>(serializer)! };
+            throw new global::Newtonsoft.Json.JsonSerializationException("No known variant property found for EntityChoice.");
         }
         public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, EntityChoice value, global::Newtonsoft.Json.JsonSerializer serializer)
             => serializer.Serialize(writer, value.Value);
@@ -364,6 +421,8 @@ namespace Corpus.Generated
             settings.Converters.Add(new NullableDecimalStringConverter());
             settings.Converters.Add(new TimeSpanIso8601Converter());
             settings.Converters.Add(new NullableTimeSpanIso8601Converter());
+            settings.Converters.Add(new BinaryBase64UrlConverter());
+            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
     }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
@@ -457,6 +516,31 @@ namespace Corpus.Generated
             foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
             writer.WriteEndArray();
         }
+    }
+
+    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var value = (string)reader.Value ?? string.Empty;
+            value = value.Replace('-', '+').Replace('_', '/');
+            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
+            return global::System.Convert.FromBase64String(value);
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
+    }
+    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var text = (string)reader.Value ?? string.Empty;
+            var bytes = new byte[text.Length / 2];
+            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
+            return bytes;
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 
@@ -502,6 +586,8 @@ namespace Corpus.Generated
             settings.Converters.Add(new NullableDecimalStringConverter());
             settings.Converters.Add(new TimeSpanIso8601Converter());
             settings.Converters.Add(new NullableTimeSpanIso8601Converter());
+            settings.Converters.Add(new BinaryBase64UrlConverter());
+            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
     }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
@@ -597,6 +683,31 @@ namespace Corpus.Generated
         }
     }
 
+    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var value = (string)reader.Value ?? string.Empty;
+            value = value.Replace('-', '+').Replace('_', '/');
+            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
+            return global::System.Convert.FromBase64String(value);
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
+    }
+    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var text = (string)reader.Value ?? string.Empty;
+            var bytes = new byte[text.Length / 2];
+            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
+            return bytes;
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
+    }
+
 
 
 }
@@ -615,7 +726,7 @@ namespace Corpus.Generated
     [global::System.Obsolete]
     public partial class AdvancedFeatures
     {
-        public string constField { get; set; }
+        public string constField { get; set; } = "FIXED_VALUE";
         [global::System.Obsolete]
         public int? deprecatedField { get; set; }
         public string? readOnlyField { get; }
@@ -641,6 +752,8 @@ namespace Corpus.Generated
             settings.Converters.Add(new NullableDecimalStringConverter());
             settings.Converters.Add(new TimeSpanIso8601Converter());
             settings.Converters.Add(new NullableTimeSpanIso8601Converter());
+            settings.Converters.Add(new BinaryBase64UrlConverter());
+            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
     }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
@@ -734,6 +847,31 @@ namespace Corpus.Generated
             foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
             writer.WriteEndArray();
         }
+    }
+
+    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var value = (string)reader.Value ?? string.Empty;
+            value = value.Replace('-', '+').Replace('_', '/');
+            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
+            return global::System.Convert.FromBase64String(value);
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
+    }
+    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var text = (string)reader.Value ?? string.Empty;
+            var bytes = new byte[text.Length / 2];
+            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
+            return bytes;
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 
@@ -756,7 +894,7 @@ namespace Corpus.Generated
         [global::System.ComponentModel.DataAnnotations.MaxLength(50)]
         public string constrainedString { get; set; }
         public string enumField { get; set; }
-        public string? constField { get; set; }
+        public string? constField { get; set; } = "fixed-value";
         public int? numberWithConstraints { get; set; }
         public double? exclusiveRangeNumber { get; set; }
     }
@@ -778,6 +916,8 @@ namespace Corpus.Generated
             settings.Converters.Add(new NullableDecimalStringConverter());
             settings.Converters.Add(new TimeSpanIso8601Converter());
             settings.Converters.Add(new NullableTimeSpanIso8601Converter());
+            settings.Converters.Add(new BinaryBase64UrlConverter());
+            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
     }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
@@ -871,6 +1011,31 @@ namespace Corpus.Generated
             foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
             writer.WriteEndArray();
         }
+    }
+
+    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var value = (string)reader.Value ?? string.Empty;
+            value = value.Replace('-', '+').Replace('_', '/');
+            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
+            return global::System.Convert.FromBase64String(value);
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
+    }
+    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    {
+        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var text = (string)reader.Value ?? string.Empty;
+            var bytes = new byte[text.Length / 2];
+            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
+            return bytes;
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 

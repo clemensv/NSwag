@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schemas.example.com/namespaces",
+  "companyName": "DataFlow Solutions",
+  "headquarters": {
+    "street": "500 Tech Boulevard",
+    "city": "Austin",
+    "state": "Texas",
+    "zipCode": "78701",
+    "country": "US"
+  },
+  "employees": [
+    {
+      "employeeId": "EMP002",
+      "firstName": "Sarah",
+      "lastName": "Johnson",
+      "department": {
+        "code": "ENG",
+        "name": "Engineering",
+        "managerId": "EMP001",
+        "budget": "1800000.00"
+      },
+      "position": "Senior Software Developer",
+      "salary": "125000.00",
+      "hireDate": "2019-03-15",
+      "address": {
+        "street": "789 Maple Lane",
+        "city": "Austin",
+        "state": "Texas",
+        "zipCode": "78702",
+        "country": "US"
+      },
+      "contact": {
+        "email": "sarah.johnson@company.com",
+        "phone": "+1-555-987-6543"
+      }
+    }
+  ],
+  "departments": [
+    {
+      "code": "ENG",
+      "name": "Engineering",
+      "managerId": "EMP001",
+      "budget": "1800000.00"
+    }
+  ],
+  "lastUpdated": "2024-11-15T10:30:00Z"
+}

@@ -49,7 +49,10 @@ namespace NSwag.JsonStructure.CodeGeneration
                     namedType.Schema.Kind,
                     namedType.Schema.IsAbstract,
                     namedType.Schema.Description,
-                    CopyMetadata(namedType.Schema));
+                    CopyMetadata(namedType.Schema),
+                    namedType.Schema.Const,
+                    namedType.Schema.Enumeration,
+                    namedType.Schema.Examples);
                 bySchema[namedType.Schema] = projection;
                 byNamedType[namedType] = projection;
             }
@@ -184,7 +187,10 @@ namespace NSwag.JsonStructure.CodeGeneration
                         null,
                         null,
                         false,
-                        CopyMetadata(schema));
+                        CopyMetadata(schema),
+                        null,
+                        null,
+                        schema.Enumeration);
                 }
 
                 var union = schema.Union;
@@ -218,7 +224,8 @@ namespace NSwag.JsonStructure.CodeGeneration
                     CopyMetadata(schema),
                     null,
                     schema.TupleOrder.Select(name => schema.Properties.First(p => p.Name == name))
-                        .Select(property => Project(property.Schema)).ToList());
+                        .Select(property => Project(property.Schema)).ToList(),
+                    schema.Enumeration);
             }
 
             private JsonStructureCodeGenerationNamedType GetInlineType(JsonStructureSchema schema)
@@ -241,7 +248,10 @@ namespace NSwag.JsonStructure.CodeGeneration
                         schema.Kind,
                         schema.IsAbstract,
                         schema.Description,
-                        CopyMetadata(schema));
+                        CopyMetadata(schema),
+                        schema.Const,
+                        schema.Enumeration,
+                        schema.Examples);
                     _inlineTypes[schema] = inline;
                     Populate(inline, schema);
                 }
@@ -296,7 +306,7 @@ namespace NSwag.JsonStructure.CodeGeneration
     /// <summary>A named generated type.</summary>
     public sealed class JsonStructureCodeGenerationNamedType
     {
-        internal JsonStructureCodeGenerationNamedType(string name, IReadOnlyList<string> namespacePath, JsonStructureTypeKind kind, bool isAbstract, string description, IReadOnlyDictionary<string, JToken> annotations)
+        internal JsonStructureCodeGenerationNamedType(string name, IReadOnlyList<string> namespacePath, JsonStructureTypeKind kind, bool isAbstract, string description, IReadOnlyDictionary<string, JToken> annotations, JToken @const = null, IReadOnlyList<object> enumeration = null, JArray examples = null)
         {
             Name = name;
             NamespacePath = namespacePath;
@@ -304,6 +314,9 @@ namespace NSwag.JsonStructure.CodeGeneration
             IsAbstract = isAbstract;
             Description = description;
             Annotations = annotations;
+            Const = @const?.DeepClone();
+            Enumeration = enumeration ?? [];
+            Examples = examples?.DeepClone() as JArray;
             Properties = [];
             Choices = [];
             TupleOrder = [];
@@ -316,6 +329,9 @@ namespace NSwag.JsonStructure.CodeGeneration
         public bool IsAbstract { get; }
         public string Description { get; }
         public IReadOnlyDictionary<string, JToken> Annotations { get; }
+        public JToken Const { get; }
+        public IReadOnlyList<object> Enumeration { get; }
+        public JArray Examples { get; }
         public JsonStructureCodeGenerationNamedType BaseType { get; internal set; }
         public JsonStructureCodeGenerationNamedType Extends => BaseType;
         public IReadOnlyList<JsonStructureCodeGenerationProperty> Properties { get; internal set; }
@@ -385,7 +401,8 @@ namespace NSwag.JsonStructure.CodeGeneration
             bool isNullable,
             IReadOnlyDictionary<string, JToken> annotations,
             IReadOnlyList<JsonStructureCodeGenerationTypeReference> union = null,
-            IReadOnlyList<JsonStructureCodeGenerationTypeReference> tupleElements = null)
+            IReadOnlyList<JsonStructureCodeGenerationTypeReference> tupleElements = null,
+            IReadOnlyList<object> enumeration = null)
         {
             Kind = kind;
             NamedType = namedType;
@@ -396,6 +413,7 @@ namespace NSwag.JsonStructure.CodeGeneration
             Annotations = annotations;
             Union = union ?? [];
             TupleElements = tupleElements ?? [];
+            Enumeration = enumeration ?? [];
         }
 
         public JsonStructureTypeKind Kind { get; }
@@ -406,6 +424,7 @@ namespace NSwag.JsonStructure.CodeGeneration
         public JsonStructureCodeGenerationTypeReference ValueType { get; }
         public IReadOnlyList<JsonStructureCodeGenerationTypeReference> TupleElements { get; }
         public IReadOnlyList<JsonStructureCodeGenerationTypeReference> Union { get; }
+        public IReadOnlyList<object> Enumeration { get; }
         public IReadOnlyDictionary<string, JToken> Annotations { get; }
     }
 }

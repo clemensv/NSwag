@@ -40,6 +40,10 @@ internal sealed class JsonStructureTypeScriptTypeResolver
             type.ElementType != null ? (type.Kind == JsonStructureTypeKind.Set ? "Set<" : "") + Resolve(type.ElementType, context) + (type.Kind == JsonStructureTypeKind.Set ? ">" : "[]") :
             type.ValueType != null ? "{ [key: string]: " + Resolve(type.ValueType, context) + " }" :
             Resolve(type.Kind);
+        if (type.Enumeration.Count > 0)
+        {
+            result = string.Join(" | ", type.Enumeration.Select(ToLiteral));
+        }
         return type.IsNullable && result != "null" ? result + " | null" : result;
     }
 
@@ -121,4 +125,12 @@ internal sealed class JsonStructureTypeScriptTypeResolver
 
     private static string Sanitize(string name) => string.IsNullOrWhiteSpace(name) ? "value" :
         new(name.Select((c, i) => (char.IsLetterOrDigit(c) || c == '_') && (i > 0 || !char.IsDigit(c)) ? c : '_').ToArray());
+
+    private static string ToLiteral(object value) => value switch
+    {
+        null => "null",
+        string text => "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"",
+        bool boolean => boolean ? "true" : "false",
+        _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)
+    };
 }

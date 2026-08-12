@@ -206,6 +206,35 @@ namespace NSwag.JsonStructure.Tests
             Assert.Equal("Real", JsonStructureResolver.ResolvePointer(document, document.RootPointer).Name);
         }
 
+        [Fact]
+        public void External_and_malformed_reference_fragments_are_rejected()
+        {
+            Assert.Throws<JsonStructureException>(() => Parse("""
+                { "definitions": { "Bad": { "type": { "$ref": "https://example.com/types.json#/X" } } } }
+                """));
+            Assert.Throws<JsonStructureException>(() => Parse("""
+                { "definitions": { "Bad": { "type": { "$ref": "#/definitions/Bad~2" } } } }
+                """));
+        }
+
+        [Fact]
+        public void Extends_array_preserves_order_and_resolves_each_base()
+        {
+            var document = Parse("""
+                {
+                  "definitions": {
+                    "A": { "type": "object", "abstract": true },
+                    "B": { "type": "object", "abstract": true },
+                    "C": { "type": "object", "$extends": ["#/definitions/A", "#/definitions/B"] }
+                  }
+                }
+                """);
+
+            JsonStructureResolver.Resolve(document);
+            var type = document.GetAllTypes().Single(t => t.Name == "C");
+            Assert.Equal(["A", "B"], type.Schema.ResolvedExtendsTypes.Select(t => t.Name));
+        }
+
         private static JsonStructureDocument ParseFile(string fileName)
         {
             return new JsonStructureParser().Parse(File.ReadAllText(Path.Combine(SchemaDirectory, fileName)));

@@ -98,6 +98,10 @@ namespace NSwag.JsonStructure.Parsing
             }
 
             document.RootPointer = rootPointer;
+            if (rootPointer != null)
+            {
+                ValidateLocalPointer(rootPointer, "#/$root");
+            }
 
             if (root[JsonStructureKeywords.Definitions] is JObject definitions)
             {
@@ -265,8 +269,9 @@ namespace NSwag.JsonStructure.Parsing
                 Name = (string)node[JsonStructureKeywords.Name],
                 Description = (string)node[JsonStructureKeywords.Description],
                 Selector = (string)node[JsonStructureKeywords.Selector],
-                Extends = (string)node[JsonStructureKeywords.Extends]
             };
+
+            ReadExtends(node, schema, pointer);
 
             if (node[JsonStructureKeywords.Abstract] is JValue { Type: JTokenType.Boolean } abstractValue)
             {
@@ -274,6 +279,16 @@ namespace NSwag.JsonStructure.Parsing
             }
 
             ReadType(node[JsonStructureKeywords.Type], schema, document, pointer, isDocumentRoot);
+            if (node[JsonStructureKeywords.Type] == null && node[JsonStructureKeywords.Ref] is JValue { Type: JTokenType.String } directReference)
+            {
+                if (isDocumentRoot)
+                {
+                    throw new JsonStructureException("'$ref' must not be used at the document root.", pointer + "/$ref");
+                }
+
+                schema.Reference = (string)directReference;
+                ValidateLocalPointer(schema.Reference, pointer + "/$ref");
+            }
 
             ReadProperties(node, schema, document, pointer);
             ReadRequired(node, schema, pointer);
@@ -314,7 +329,7 @@ namespace NSwag.JsonStructure.Parsing
                 case JObject reference:
                 {
                     var refValue = (string)reference[JsonStructureKeywords.Ref];
-                    if (refValue == null)
+                    if (refValue == null || reference.Properties().Count() != 1)
                     {
                         throw new JsonStructureException(
                             "An object 'type' value must contain a single '$ref' property.", pointer + "/type");
@@ -327,6 +342,8 @@ namespace NSwag.JsonStructure.Parsing
                     }
 
                     schema.Reference = refValue;
+                    ValidateLocalPointer(refValue, pointer + "/type/$ref");
+                    ValidateLocalPointer(refValue, pointer + "/type/$ref");
                     return;
                 }
 
@@ -372,6 +389,7 @@ namespace NSwag.JsonStructure.Parsing
                     }
 
                     case JObject obj when obj[JsonStructureKeywords.Ref] != null:
+                        ValidateSingleRefObject(obj, memberPointer);
                         schema.AddUnionMember(
                             new JsonStructureTypeReference((string)obj[JsonStructureKeywords.Ref]));
                         break;
@@ -395,6 +413,90 @@ namespace NSwag.JsonStructure.Parsing
                         throw new JsonStructureException(
                             "A type union member must be a type name, a '$ref' object, or an inline compound type.",
                             memberPointer);
+                }
+            }
+        }
+
+        private static void ReadExtends(JObject node, JsonStructureSchema schema, string pointer)
+        {
+            var value = node[JsonStructureKeywords.Extends];
+            if (value == null)
+            {
+                return;
+            }
+
+            if (value is JValue { Type: JTokenType.String } single)
+            {
+                var reference = (string)single;
+                ValidateLocalPointer(reference, pointer + "/$extends");
+                schema.AddExtends(reference);
+                return;
+            }
+
+            if (value is JArray array)
+            {
+                if (array.Count == 0)
+                {
+                    throw new JsonStructureException("'$extends' must contain at least one local reference.", pointer + "/$extends");
+                }
+
+                foreach (var item in array)
+                {
+                    if (item is not JValue { Type: JTokenType.String } entry)
+                    {
+                        throw new JsonStructureException("Every '$extends' entry must be a local JSON Pointer.", pointer + "/$extends");
+                    }
+
+                    var reference = (string)entry;
+                    ValidateLocalPointer(reference, pointer + "/$extends");
+                    schema.AddExtends(reference);
+                }
+
+                return;
+            }
+
+            throw new JsonStructureException("'$extends' must be a local JSON Pointer or an array of local JSON Pointers.", pointer + "/$extends");
+        }
+
+        private static void ValidateSingleRefObject(JObject obj, string pointer)
+        {
+            if (obj.Properties().Count() != 1)
+            {
+                throw new JsonStructureException("A type union '$ref' object must contain only '$ref'.", pointer);
+            }
+
+            ValidateLocalPointer((string)obj[JsonStructureKeywords.Ref], pointer + "/$ref");
+        }
+
+        private static void ValidateLocalPointer(string value, string pointer)
+        {
+            if (string.IsNullOrEmpty(value) || value[0] != '#' || (value.Length > 1 && value[1] != '/'))
+            {
+                throw new JsonStructureException("References must be local JSON Pointer fragments beginning with '#/'.", pointer);
+            }
+
+            var fragment = value.Substring(1);
+            for (var i = 0; i < fragment.Length; i++)
+            {
+                if (fragment[i] == '%')
+                {
+                    if (i + 2 >= fragment.Length || !Uri.IsHexDigit(fragment[i + 1]) || !Uri.IsHexDigit(fragment[i + 2]))
+                    {
+                        throw new JsonStructureException("The JSON Pointer fragment contains an invalid percent escape.", pointer);
+                    }
+                    i += 2;
+                }
+            }
+
+            var decoded = Uri.UnescapeDataString(fragment);
+            foreach (var segment in decoded.Split('/').Skip(1))
+            {
+                for (var i = 0; i < segment.Length; i++)
+                {
+                    if (segment[i] == '~' && (i + 1 >= segment.Length || (segment[i + 1] != '0' && segment[i + 1] != '1')))
+                    {
+                        throw new JsonStructureException("The JSON Pointer contains an invalid '~' escape.", pointer);
+                    }
                 }
             }
         }

@@ -20,22 +20,22 @@ The `Extended` and `Validation` dialects offer the following add-ins through `$u
 
 ## Conformance scope
 
-NSwag currently implements a broad **Core syntax and type-model subset**, not
-full JSON Structure Core conformance. The parser and model cover the Core
-primitive and compound types, namespaces, definitions, references, `$root`,
-`$extends`, abstract types, unions, choices, tuples, sets, maps, and the Core
-structural keywords. The official meta-schemas are not interpreted generically;
-validation is implemented as a rule-based validator and should therefore be
-treated as a useful diagnostic pass rather than a complete conformance oracle.
+NSwag implements the JSON Structure Core schema language with a rule-based
+conformance validator. It covers the Core primitive and compound types,
+namespaces, definitions, local references, `$root`, ordered `$extends`,
+abstract types, ordered unions, choices, tuples, sets, maps, required
+properties, constants, enumerations, and Core annotations. The validator
+enforces the normative Core document, identifier, reference, composition, and
+keyword constraints and is backed by the official Core examples and negative
+cases.
 
-Some semantics are preserved in the model but are only partially reflected in
-generated code. In particular, validation constraints and alternative required
-sets are not fully enforced at runtime, binary encoding/compression annotations
-are not implemented across every serializer, and arbitrary multi-member C#
-unions are not losslessly serializable. `float8`, wide numerics, decimal,
-duration, and binary mappings are supported only within the documented
-serializer-specific limits. `$import` and `$importdefs` are add-in features,
-not Core features, and are policy-controlled and disabled by default.
+Schema conformance and generated wire behavior are separate concerns. Generated
+code preserves Core type distinctions and metadata, but serializer-specific
+limits remain for runtime validation, arbitrary multi-member C# unions, and
+unsupported binary compression/media encodings. These cases produce explicit
+diagnostics rather than silent lossy output. `$import` and `$importdefs` are
+add-in features, not Core features, and are policy-controlled and disabled by
+default.
 
 ## Import security and offline defaults
 
@@ -198,10 +198,10 @@ Use the generated serializer options or converters in the same way as the select
 
 | Capability | Status | Notes |
 |---|---|---|
-| Parse canonical Core, Extended, and Validation dialects | Supported with restrictions | Core syntax and the implemented add-in rules are covered; this is not a claim of complete meta-schema conformance |
+| Parse canonical Core, Extended, and Validation dialects | Supported with restrictions | Core conformance is enforced by the rule-based validator; add-ins remain dialect- and policy-controlled |
 | Read explicitly allowlisted derived dialects | Supported | The caller must register the URI |
 | Parse Core definitions, references, objects, arrays, sets, maps, tuples, choices, and hierarchies | Supported at the model level | Core shapes are preserved; generated runtime validation and all wire semantics are not complete |
-| Complete JSON Structure Core meta-schema conformance | Not claimed | Validation is rule-based rather than a generic meta-schema interpreter |
+| Validate JSON Structure Core documents | Supported | Normative Core rules are enforced and covered by the official Core corpus; the implementation does not execute the meta-schema as a generic interpreter |
 | Resolve local and imported definitions | Supported with policy | Imports are disabled by default and remain size- and timeout-limited |
 | Generate JSON Structure schemas from ASP.NET Core types | Supported | Select `SchemaDialect=JsonStructure` |
 | Generate C# contracts | Supported with restrictions | Use `openapi2csclient`; serializer and union limitations apply |

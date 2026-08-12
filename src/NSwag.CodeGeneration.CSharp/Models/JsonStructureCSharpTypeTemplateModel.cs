@@ -136,6 +136,30 @@ internal sealed class JsonStructureCSharpPropertyTemplateModel
                 : "[global::Newtonsoft.Json.JsonIgnore]"
             : null;
         Attributes = settings.GenerateDataAnnotations ? BuildAttributes(property.Annotations, settings, null) : [];
+        if (property.Const != null)
+        {
+            DefaultValue = GetCSharpLiteral(property.Const, Type);
+        }
+        else
+        {
+            DefaultValue = null;
+        }
+        if (property.Type?.Kind == JsonStructureTypeKind.Binary &&
+            property.Annotations.TryGetValue("contentEncoding", out var encoding) &&
+            encoding.Type == JTokenType.String &&
+            !string.Equals(encoding.Value<string>(), "base64", StringComparison.OrdinalIgnoreCase))
+        {
+            var converter = encoding.Value<string>().Equals("base64url", StringComparison.OrdinalIgnoreCase)
+                ? "BinaryBase64UrlConverter"
+                : encoding.Value<string>().Equals("hex", StringComparison.OrdinalIgnoreCase)
+                    ? "BinaryHexConverter" : null;
+            if (converter != null)
+            {
+                Attributes = Attributes.Concat([settings.JsonLibrary == CSharpJsonLibrary.SystemTextJson
+                    ? $"[global::System.Text.Json.Serialization.JsonConverter(typeof({converter}))]"
+                    : $"[global::Newtonsoft.Json.JsonConverter(typeof({converter}))]"]).ToList();
+            }
+        }
         Documentation = settings.GenerateDataAnnotations ? BuildDocumentation(property.Annotations) : null;
         HasGetter = !settings.GenerateDataAnnotations || !IsTrue(property.Annotations, "writeOnly");
         HasSetter = !settings.GenerateDataAnnotations || !IsTrue(property.Annotations, "readOnly");
@@ -146,6 +170,7 @@ internal sealed class JsonStructureCSharpPropertyTemplateModel
     public bool IsRequired { get; }
     public string JsonIgnoreSelector { get; }
     public IReadOnlyList<string> Attributes { get; }
+    public string DefaultValue { get; }
     public string Documentation { get; }
     public bool HasGetter { get; }
     public bool HasSetter { get; }
@@ -242,6 +267,19 @@ internal sealed class JsonStructureCSharpPropertyTemplateModel
     }
 
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+    private static string GetCSharpLiteral(JToken token, string type)
+    {
+        return token.Type switch
+        {
+            JTokenType.String => "\"" + Escape(token.Value<string>()) + "\"",
+            JTokenType.Boolean => token.Value<bool>() ? "true" : "false",
+            JTokenType.Integer => token.ToString(Newtonsoft.Json.Formatting.None),
+            JTokenType.Float => token.ToString(Newtonsoft.Json.Formatting.None) + "m",
+            JTokenType.Null => "null",
+            _ => "default"
+        };
+    }
 
     private static string Sanitize(string name, string typeName, ISet<string> usedNames)
     {

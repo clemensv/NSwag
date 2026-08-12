@@ -243,6 +243,25 @@ namespace NSwag.JsonStructure.Tests
         }
 
         [Fact]
+        public void Inherited_property_collisions_are_rejected()
+        {
+            var document = Parse("""
+                {
+                  "$schema": "https://json-structure.org/meta/core/v0/#",
+                  "$id": "https://example.com/test",
+                  "name": "Test",
+                  "definitions": {
+                    "Base": { "type": "object", "abstract": true, "properties": { "id": { "type": "string" } } },
+                    "Derived": { "type": "object", "$extends": "#/definitions/Base", "properties": { "id": { "type": "int32" } } }
+                  }
+                }
+                """);
+            JsonStructureResolver.Resolve(document);
+
+            AssertDiagnostic(JsonStructureValidator.Validate(document), "#/definitions/Derived/properties/id", "collides with an inherited property");
+        }
+
+        [Fact]
         public void Multiple_errors_are_collected_in_one_pass()
         {
             var document = Parse("""
@@ -288,4 +307,3 @@ namespace NSwag.JsonStructure.Tests
         }
     }
 }
-

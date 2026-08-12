@@ -33,7 +33,7 @@ export class BasicTypes implements IBasicTypes {
             this.doubleField = _data["doubleField"];
             this.booleanField = _data["booleanField"];
             this.uuidField = _data["uuidField"];
-            this.bytesField = _data["bytesField"];
+            this.bytesField = _data["bytesField"] ? Uint8Array.from(Array.prototype.map.call((globalThis as any).atob(_data["bytesField"]), (x: string) => x.charCodeAt(0)) as number[]) : _data["bytesField"];
         }
     }
 
@@ -53,7 +53,7 @@ export class BasicTypes implements IBasicTypes {
         data["doubleField"] = this.doubleField;
         data["booleanField"] = this.booleanField;
         data["uuidField"] = this.uuidField;
-        data["bytesField"] = this.bytesField;
+        data["bytesField"] = this.bytesField ? (globalThis as any).btoa(String.fromCharCode(...(Array.from(this.bytesField as any) as unknown as number[]))) : this.bytesField;
         return data;
     }
 }
@@ -294,7 +294,7 @@ namespace Corpus.Generated {
 
 export class ComplexScenario implements IComplexScenario {
     metadata!: { id: string; version: string; created: Date; tags: Set<string>; };
-    data!: { type: string; value: string; timestamp: Date; device: { id: string; calibration: { [key: string]: number }; }; } | { type: string; name: string; severity: string; details: { key: string; value: string | bigint | number | boolean; }[]; };
+    data!: { type: string; value: string; timestamp: Date; device: { id: string; calibration: { [key: string]: number }; }; } | { type: string; name: string; severity: "low" | "medium" | "high" | "critical"; details: { key: string; value: string | bigint | number | boolean; }[]; };
     signature?: string;
 
     constructor(data?: IComplexScenario) {
@@ -311,7 +311,7 @@ export class ComplexScenario implements IComplexScenario {
         if (_data) {
             this.metadata = _data["metadata"];
             this.data = _data["data"];
-            this.signature = _data["signature"];
+            this.signature = _data["signature"] ? Uint8Array.from(Array.prototype.map.call((globalThis as any).atob(_data["signature"]), (x: string) => x.charCodeAt(0)) as number[]) : _data["signature"];
         }
     }
 
@@ -326,14 +326,14 @@ export class ComplexScenario implements IComplexScenario {
         data = typeof data === 'object' ? data : {};
         data["metadata"] = this.metadata;
         data["data"] = this.data;
-        data["signature"] = this.signature;
+        data["signature"] = this.signature ? (globalThis as any).btoa(String.fromCharCode(...(Array.from(this.signature as any) as unknown as number[]))) : this.signature;
         return data;
     }
 }
 
 export interface IComplexScenario {
     metadata: { id: string; version: string; created: Date; tags: Set<string>; };
-    data: { type: string; value: string; timestamp: Date; device: { id: string; calibration: { [key: string]: number }; }; } | { type: string; name: string; severity: string; details: { key: string; value: string | bigint | number | boolean; }[]; };
+    data: { type: string; value: string; timestamp: Date; device: { id: string; calibration: { [key: string]: number }; }; } | { type: string; name: string; severity: "low" | "medium" | "high" | "critical"; details: { key: string; value: string | bigint | number | boolean; }[]; };
     signature?: string;
 }
 
@@ -413,7 +413,7 @@ export interface INumericTypes {
 namespace Corpus.Generated {
 
 export class NestedObjects implements INestedObjects {
-    person!: { firstName: string; lastName: string; address: { street: string; city: string; country: string; coordinates: { latitude: number; longitude: number; }; }; phoneNumbers: { type: string; number: string; }[]; };
+    person!: { firstName: string; lastName: string; address: { street: string; city: string; country: string; coordinates: { latitude: number; longitude: number; }; }; phoneNumbers: { type: "home" | "work" | "mobile"; number: string; }[]; };
 
     constructor(data?: INestedObjects) {
 
@@ -446,7 +446,7 @@ export class NestedObjects implements INestedObjects {
 }
 
 export interface INestedObjects {
-    person: { firstName: string; lastName: string; address: { street: string; city: string; country: string; coordinates: { latitude: number; longitude: number; }; }; phoneNumbers: { type: string; number: string; }[]; };
+    person: { firstName: string; lastName: string; address: { street: string; city: string; country: string; coordinates: { latitude: number; longitude: number; }; }; phoneNumbers: { type: "home" | "work" | "mobile"; number: string; }[]; };
 }
 
 }
@@ -518,7 +518,7 @@ namespace Corpus.Generated {
 
 export class ValidationConstraints implements IValidationConstraints {
     constrainedString!: string;
-    enumField!: string;
+    enumField!: "red" | "green" | "blue" | "yellow";
     constField?: string;
     numberWithConstraints?: number;
     exclusiveRangeNumber?: number;
@@ -563,7 +563,7 @@ export class ValidationConstraints implements IValidationConstraints {
 
 export interface IValidationConstraints {
     constrainedString: string;
-    enumField: string;
+    enumField: "red" | "green" | "blue" | "yellow";
     constField?: string;
     numberWithConstraints?: number;
     exclusiveRangeNumber?: number;

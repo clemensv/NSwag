@@ -311,6 +311,17 @@ internal static class JsonStructureTypeScriptGenerator
             JsonStructureCodeGenerationContext context, JsonStructureTypeScriptTypeResolver resolver)
         {
             if (type == null) return value;
+            if (type.Kind == JsonStructureTypeKind.Binary)
+            {
+                var encoding = type.Annotations.TryGetValue("contentEncoding", out var token) && token.Type == Newtonsoft.Json.Linq.JTokenType.String
+                    ? token.ToString(Newtonsoft.Json.Formatting.None).Trim('"') : "base64";
+                if (encoding.Equals("hex", StringComparison.OrdinalIgnoreCase))
+                    return value + " ? Uint8Array.from((" + value + ").match(/../g) || [], (x: string) => parseInt(x, 16)) : " + value;
+                var normalized = encoding.Equals("base64url", StringComparison.OrdinalIgnoreCase)
+                    ? "(" + value + ").replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (" + value + ").length % 4) % 4)"
+                    : value;
+                return value + " ? Uint8Array.from(Array.prototype.map.call((globalThis as any).atob(" + normalized + "), (x: string) => x.charCodeAt(0)) as number[]) : " + value;
+            }
             if (type.InlineType != null && type.InlineType.Kind == JsonStructureTypeKind.Set)
                 return "new Set((" + value + " || []).map((x: any) => x))";
             if (type.InlineType != null && type.InlineType.Kind == JsonStructureTypeKind.Map)
@@ -358,6 +369,16 @@ internal static class JsonStructureTypeScriptGenerator
             JsonStructureCodeGenerationContext context, JsonStructureTypeScriptTypeResolver resolver)
         {
             if (type == null) return value;
+            if (type.Kind == JsonStructureTypeKind.Binary)
+            {
+                var encoding = type.Annotations.TryGetValue("contentEncoding", out var token) && token.Type == Newtonsoft.Json.Linq.JTokenType.String
+                    ? token.ToString(Newtonsoft.Json.Formatting.None).Trim('"') : "base64";
+                if (encoding.Equals("base64url", StringComparison.OrdinalIgnoreCase))
+                    return value + " ? (globalThis as any).btoa(String.fromCharCode(...(Array.from(" + value + " as any) as unknown as number[]))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '') : " + value;
+                if (encoding.Equals("hex", StringComparison.OrdinalIgnoreCase))
+                    return value + " ? Array.from(" + value + ").map((x: number) => x.toString(16).padStart(2, '0')).join('') : " + value;
+                return value + " ? (globalThis as any).btoa(String.fromCharCode(...(Array.from(" + value + " as any) as unknown as number[]))) : " + value;
+            }
             if (type.InlineType != null && type.InlineType.Kind == JsonStructureTypeKind.Set)
                 return "Array.from(" + value + " || []).map((x: any) => x)";
             if (type.InlineType != null && type.InlineType.Kind == JsonStructureTypeKind.Map)

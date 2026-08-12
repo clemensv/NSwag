@@ -27,6 +27,7 @@ namespace NSwag.JsonStructure.Validation
             var diagnostics = new List<JsonStructureDiagnostic>();
 
             ValidateDocumentRoot(document, diagnostics);
+            ValidateSourceDocument(document, diagnostics);
             ValidateNamespace(document, document.Definitions, diagnostics);
 
             if (document.RootSchema != null)
@@ -35,6 +36,7 @@ namespace NSwag.JsonStructure.Validation
             }
 
             ValidateRootReference(document, diagnostics);
+            ValidateInheritance(document, diagnostics);
 
             return diagnostics;
         }
@@ -62,6 +64,23 @@ namespace NSwag.JsonStructure.Validation
             RequireRootString(document.Id, JsonStructureKeywords.Id, diagnostics);
             RequireRootString(document.Name, JsonStructureKeywords.Name, diagnostics);
 
+            if (!IsAbsoluteUri(document.SchemaUri))
+            {
+                diagnostics.Add(Error("#/$schema", "The '$schema' value must be an absolute URI."));
+            }
+
+            if (!IsAbsoluteUri(document.Id))
+            {
+                diagnostics.Add(Error("#/$id", "The '$id' value must be an absolute URI."));
+            }
+
+            if (document.SchemaUri != null &&
+                string.Equals(document.SchemaUri, JsonStructureDialects.CoreUri, StringComparison.Ordinal) == false &&
+                document.Dialect == JsonStructureDialect.Core)
+            {
+                diagnostics.Add(Error("#/$schema", "The '$schema' value does not identify the Core meta-schema."));
+            }
+
             // SchemaDocument permits "$root", "definitions" and root "type"; core prose makes
             // "$root" and root "type" mutually exclusive.
             if (document.RootPointer != null && document.RootSchema != null)
@@ -74,6 +93,431 @@ namespace NSwag.JsonStructure.Validation
                 diagnostics.Add(Error("#/name", "The root type name '" + document.RootSchema.Name + "' must match [A-Za-z_][A-Za-z0-9_]*."));
             }
         }
+
+            private static void ValidateSourceDocument(JsonStructureDocument document, List<JsonStructureDiagnostic> diagnostics)
+            {
+                if (document.SourceJson is not JObject root)
+                {
+                    return;
+                }
+
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var property in root.Properties())
+                {
+                    if (!seen.Add(property.Name))
+                    {
+                        diagnostics.Add(Error("#/" + EscapePointerSegment(property.Name), "The keyword '" + property.Name + "' must not occur more than once."));
+                    }
+                }
+
+                foreach (var property in root.Properties())
+                {
+                    if (property.Name is JsonStructureKeywords.Schema or JsonStructureKeywords.Id or JsonStructureKeywords.Root or
+                        JsonStructureKeywords.Definitions or JsonStructureKeywords.Offers or JsonStructureKeywords.Uses or JsonStructureKeywords.Name or
+                        JsonStructureKeywords.Type)
+                    {
+                        continue;
+                    }
+
+                    if (IsReservedKeyword(property.Name) &&
+                        !JsonStructureKeywords.IsStructural(property.Name) &&
+                        !JsonStructureKeywords.IsCoreAnnotation(property.Name) &&
+                        !JsonStructureKeywords.TryGetAddIn(property.Name, out _))
+                    {
+                        diagnostics.Add(Error("#/" + EscapePointerSegment(property.Name), "The reserved keyword '" + property.Name + "' is not valid as a custom keyword."));
+                    }
+                }
+
+                if (root[JsonStructureKeywords.Name] is JValue name && (name.Type != JTokenType.String || string.IsNullOrWhiteSpace((string)name)))
+                {
+                    diagnostics.Add(Error("#/name", "The root 'name' must be a non-empty string."));
+                }
+
+                if (root[JsonStructureKeywords.Definitions] is JObject definitions)
+                {
+                    ValidateDefinitionNamespace(definitions, "#/definitions", diagnostics);
+                }
+
+                if (root[JsonStructureKeywords.Type] is not null)
+                {
+                    ValidateSourceSchema(root, "#", diagnostics, true);
+                }
+
+                ValidateSourceReferences(root, diagnostics);
+            }
+
+            private static void ValidateDefinitionNamespace(JObject node, string pointer, List<JsonStructureDiagnostic> diagnostics)
+            {
+                var names = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var property in node.Properties())
+                {
+                    var childPointer = pointer + "/" + EscapePointerSegment(property.Name);
+                    if (!names.Add(property.Name))
+                    {
+                        diagnostics.Add(Error(childPointer, "A definition or namespace name must be unique within its namespace."));
+                    }
+
+                    if (property.Value is not JObject child)
+                    {
+                        diagnostics.Add(Error(childPointer, "A definition or namespace must be a JSON object."));
+                        continue;
+                    }
+
+                    if (child[JsonStructureKeywords.Type] != null)
+                    {
+                        ValidateSourceSchema(child, childPointer, diagnostics, false);
+                    }
+                    else
+                    {
+                        ValidateDefinitionNamespace(child, childPointer, diagnostics);
+                    }
+                }
+            }
+
+            private static void ValidateSourceSchema(JObject node, string pointer, List<JsonStructureDiagnostic> diagnostics, bool documentRoot)
+            {
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var property in node.Properties())
+                {
+                    if (!seen.Add(property.Name))
+                    {
+                        diagnostics.Add(Error(pointer + "/" + EscapePointerSegment(property.Name), "The keyword '" + property.Name + "' must not occur more than once."));
+                    }
+                    else if (IsReservedKeyword(property.Name) &&
+                        !JsonStructureKeywords.IsStructural(property.Name) &&
+                        !JsonStructureKeywords.IsCoreAnnotation(property.Name) &&
+                        !JsonStructureKeywords.TryGetAddIn(property.Name, out _))
+                    {
+                        diagnostics.Add(Error(pointer + "/" + EscapePointerSegment(property.Name),
+                            "The reserved keyword '" + property.Name + "' is not valid as a custom keyword."));
+                    }
+                }
+
+                var type = node[JsonStructureKeywords.Type];
+                if (type == null && node[JsonStructureKeywords.Ref] == null)
+                {
+                    diagnostics.Add(Error(pointer + "/type", "Every schema element must declare 'type'."));
+                    return;
+                }
+
+                if (type == null)
+                {
+                    return;
+                }
+
+                var typeName = type.Type == JTokenType.String ? (string)type : null;
+                var kind = JsonStructureTypeKind.None;
+                var isPrimitive = typeName != null && JsonStructureTypeKinds.TryParse(typeName, out kind) &&
+                    IsPrimitive(kind);
+                var isObject = string.Equals(typeName, "object", StringComparison.Ordinal);
+                var isTuple = string.Equals(typeName, "tuple", StringComparison.Ordinal);
+                var isArray = string.Equals(typeName, "array", StringComparison.Ordinal);
+                var isSet = string.Equals(typeName, "set", StringComparison.Ordinal);
+                var isMap = string.Equals(typeName, "map", StringComparison.Ordinal);
+                var isChoice = string.Equals(typeName, "choice", StringComparison.Ordinal);
+                var isUnion = type is JArray;
+                var isReference = type is JObject;
+
+                if (node[JsonStructureKeywords.Name] is JToken nameToken &&
+                    (nameToken.Type != JTokenType.String || !IsIdentifier((string)nameToken)))
+                {
+                    diagnostics.Add(Error(pointer + "/name", "A type name must match [A-Za-z_][A-Za-z0-9_]*."));
+                }
+
+                if (isUnion && node[JsonStructureKeywords.Enum] != null)
+                {
+                    diagnostics.Add(Error(pointer + "/enum", "The 'enum' keyword is not permitted with a type union."));
+                }
+
+                ValidatePrimitiveConstraints(node, pointer, diagnostics, isPrimitive, isUnion, kind);
+                ValidateCompoundKeyword(node, pointer, diagnostics, isObject, isTuple, isArray, isSet, isMap, isChoice);
+
+                if ((isObject || isTuple) && !documentRoot && node[JsonStructureKeywords.Properties] is not JObject)
+                {
+                    diagnostics.Add(Error(pointer + "/properties", "An object or tuple type must declare a 'properties' object."));
+                }
+                if ((isArray || isSet) && node[JsonStructureKeywords.Items] is not JObject)
+                {
+                    diagnostics.Add(Error(pointer + "/items", "An array or set type must declare 'items'."));
+                }
+                if (isMap && node[JsonStructureKeywords.Values] is not JObject)
+                {
+                    diagnostics.Add(Error(pointer + "/values", "A map type must declare 'values'."));
+                }
+                if (isTuple && node[JsonStructureKeywords.Tuple] is not JArray)
+                {
+                    diagnostics.Add(Error(pointer + "/tuple", "A tuple type must declare its element order with 'tuple'."));
+                }
+                if (isChoice && node[JsonStructureKeywords.Choices] is not JObject)
+                {
+                    diagnostics.Add(Error(pointer + "/choices", "A choice type must declare a 'choices' object."));
+                }
+
+                if ((isObject || isTuple) && node[JsonStructureKeywords.Properties] is JObject properties)
+                {
+                    if (properties.Properties().Any() == false)
+                    {
+                        diagnostics.Add(Error(pointer + "/properties", "An object or tuple type must declare at least one property."));
+                    }
+
+                    var propertyNames = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var property in properties.Properties())
+                    {
+                        var propertyPointer = pointer + "/properties/" + EscapePointerSegment(property.Name);
+                        if (!propertyNames.Add(property.Name))
+                        {
+                            diagnostics.Add(Error(propertyPointer, "Property names must be unique."));
+                        }
+                        if (!IsIdentifier(property.Name))
+                        {
+                            diagnostics.Add(Error(propertyPointer, "The property name '" + property.Name + "' is not a permitted identifier or is reserved."));
+                        }
+                        if (property.Value is JObject child)
+                        {
+                            ValidateSourceSchema(child, propertyPointer, diagnostics, false);
+                        }
+                        else
+                        {
+                            diagnostics.Add(Error(propertyPointer, "A property value must be a schema object."));
+                        }
+                    }
+                }
+
+                if (node[JsonStructureKeywords.Items] is JObject items)
+                {
+                    ValidateSourceSchema(items, pointer + "/items", diagnostics, false);
+                }
+                if (node[JsonStructureKeywords.Values] is JObject values)
+                {
+                    ValidateSourceSchema(values, pointer + "/values", diagnostics, false);
+                }
+                if (node[JsonStructureKeywords.AdditionalProperties] is JObject additional)
+                {
+                    ValidateSourceSchema(additional, pointer + "/additionalProperties", diagnostics, false);
+                }
+                if (node[JsonStructureKeywords.Choices] is JObject choices)
+                {
+                    var choiceNames = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var choice in choices.Properties())
+                    {
+                        var choicePointer = pointer + "/choices/" + EscapePointerSegment(choice.Name);
+                        if (!choiceNames.Add(choice.Name))
+                        {
+                            diagnostics.Add(Error(choicePointer, "Choice names must be unique."));
+                        }
+                        if (!IsIdentifier(choice.Name))
+                        {
+                            diagnostics.Add(Error(choicePointer, "The choice name '" + choice.Name + "' is not a permitted identifier or is reserved."));
+                        }
+                        if (choice.Value is JObject child)
+                        {
+                            ValidateSourceSchema(child, choicePointer, diagnostics, false);
+                        }
+                        else
+                        {
+                            diagnostics.Add(Error(choicePointer, "A choice value must be a schema object."));
+                        }
+                    }
+                }
+
+                if (node[JsonStructureKeywords.Type] is JArray union)
+                {
+                    for (var i = 0; i < union.Count; i++)
+                    {
+                        if (union[i] is not JValue { Type: JTokenType.String } &&
+                            union[i] is not JObject)
+                        {
+                            diagnostics.Add(Error(pointer + "/type/" + i, "A type union member must be a primitive type name or a '$ref' object."));
+                        }
+                        if (union[i] is JObject inline && inline[JsonStructureKeywords.Ref] == null)
+                        {
+                            if (string.Equals((string)inline[JsonStructureKeywords.Type], "object", StringComparison.Ordinal))
+                            {
+                                diagnostics.Add(Error(pointer + "/type/" + i.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                    "An object type must not be declared inline inside a non-discriminated type union."));
+                            }
+                            ValidateSourceSchema(inline, pointer + "/type/" + i.ToString(System.Globalization.CultureInfo.InvariantCulture), diagnostics, false);
+                        }
+                    }
+                }
+            }
+
+            private static void ValidateCompoundKeyword(
+                JObject node, string pointer, List<JsonStructureDiagnostic> diagnostics,
+                bool isObject, bool isTuple, bool isArray, bool isSet, bool isMap, bool isChoice)
+            {
+                CheckOnly(node, pointer, JsonStructureKeywords.Properties, isObject || isTuple, diagnostics);
+                CheckOnly(node, pointer, JsonStructureKeywords.Required, isObject, diagnostics);
+                CheckOnly(node, pointer, JsonStructureKeywords.Items, isArray || isSet, diagnostics);
+                CheckOnly(node, pointer, JsonStructureKeywords.Values, isMap, diagnostics);
+                CheckOnly(node, pointer, JsonStructureKeywords.Tuple, isTuple, diagnostics);
+                CheckOnly(node, pointer, JsonStructureKeywords.Choices, isChoice, diagnostics);
+                CheckOnly(node, pointer, JsonStructureKeywords.Selector, isChoice, diagnostics);
+                CheckOnly(node, pointer, JsonStructureKeywords.AdditionalProperties, isObject, diagnostics);
+
+                if (node[JsonStructureKeywords.Type] is JValue && node[JsonStructureKeywords.Extends] != null &&
+                    !(isObject || isTuple || isChoice))
+                {
+                    diagnostics.Add(Error(pointer + "/$extends", "The '$extends' keyword is only permitted on object, tuple, or inline choice types."));
+                }
+
+                if (node[JsonStructureKeywords.Abstract] != null)
+                {
+                    if (node[JsonStructureKeywords.Abstract].Type != JTokenType.Boolean)
+                    {
+                        diagnostics.Add(Error(pointer + "/abstract", "The 'abstract' keyword must be a boolean."));
+                    }
+                    if (!isObject && !isTuple)
+                    {
+                        diagnostics.Add(Error(pointer + "/abstract", "The 'abstract' keyword may only be used on object and tuple types."));
+                    }
+                    if (isObject && node[JsonStructureKeywords.Abstract].Value<bool>() &&
+                        node[JsonStructureKeywords.AdditionalProperties] != null)
+                    {
+                        diagnostics.Add(Error(pointer + "/additionalProperties", "Abstract types must not declare 'additionalProperties'."));
+                    }
+                }
+
+                if (node[JsonStructureKeywords.Extends] is JToken extends)
+                {
+                    if (extends.Type != JTokenType.String && extends.Type != JTokenType.Array)
+                    {
+                        diagnostics.Add(Error(pointer + "/$extends", "The '$extends' value must be a JSON Pointer string or an array of JSON Pointer strings."));
+                    }
+                    else if (extends is JArray array)
+                    {
+                        for (var i = 0; i < array.Count; i++)
+                        {
+                            if (array[i].Type != JTokenType.String || !IsLocalPointer((string)array[i]))
+                            {
+                                diagnostics.Add(Error(pointer + "/$extends/" + i, "Each '$extends' entry must be a local JSON Pointer."));
+                            }
+                        }
+                    }
+                    else if (!IsLocalPointer((string)extends))
+                    {
+                        diagnostics.Add(Error(pointer + "/$extends", "The '$extends' value must be a local JSON Pointer."));
+                    }
+                }
+
+                if (isChoice)
+                {
+                    var hasExtends = node[JsonStructureKeywords.Extends] != null;
+                    var hasSelector = node[JsonStructureKeywords.Selector] != null;
+                    if (hasExtends != hasSelector)
+                    {
+                        diagnostics.Add(Error(pointer + "/selector", "Inline choices must declare both '$extends' and 'selector'; tagged choices must declare neither."));
+                    }
+                    if (node[JsonStructureKeywords.Selector] is JValue selector &&
+                        (selector.Type != JTokenType.String || string.IsNullOrEmpty((string)selector)))
+                    {
+                        diagnostics.Add(Error(pointer + "/selector", "The 'selector' value must be a non-empty string."));
+                    }
+                }
+            }
+
+            private static void CheckOnly(JObject node, string pointer, string keyword, bool allowed, List<JsonStructureDiagnostic> diagnostics)
+            {
+                if (!allowed && node[keyword] != null)
+                {
+                    diagnostics.Add(Error(pointer + "/" + EscapePointerSegment(keyword), "The '" + keyword + "' keyword is not legal for this type."));
+                }
+            }
+
+            private static void ValidatePrimitiveConstraints(
+                JObject node, string pointer, List<JsonStructureDiagnostic> diagnostics, bool primitive, bool union,
+                JsonStructureTypeKind kind)
+            {
+                if (node[JsonStructureKeywords.Const] != null && (!primitive || union))
+                {
+                    diagnostics.Add(Error(pointer + "/const", "The 'const' keyword is only permitted on primitive types."));
+                }
+                else if (node[JsonStructureKeywords.Const] is JToken constant && !IsValueCompatible(constant, kind))
+                {
+                    diagnostics.Add(Error(pointer + "/const", "The 'const' value does not match the declared primitive type."));
+                }
+                if (node[JsonStructureKeywords.Enum] is JToken enumeration)
+                {
+                    if (!primitive || union || enumeration is not JArray)
+                    {
+                        diagnostics.Add(Error(pointer + "/enum", "The 'enum' keyword is only permitted on primitive types and must be an array."));
+                    }
+                    else
+                    {
+                        var values = (JArray)enumeration;
+                        for (var i = 0; i < values.Count; i++)
+                        {
+                            if (values[i] is not JValue)
+                            {
+                                diagnostics.Add(Error(pointer + "/enum/" + i, "Enum values must be JSON primitive values."));
+                            }
+                            if (values.Take(i).Any(v => JToken.DeepEquals(v, values[i])))
+                            {
+                                diagnostics.Add(Error(pointer + "/enum/" + i, "Enum values must be unique."));
+                            }
+                            else if (!IsValueCompatible(values[i], kind))
+                            {
+                                diagnostics.Add(Error(pointer + "/enum/" + i, "The enum value does not match the declared primitive type."));
+                            }
+                        }
+                        if (node[JsonStructureKeywords.Const] != null && !values.Any(v => JToken.DeepEquals(v, node[JsonStructureKeywords.Const])))
+                        {
+                            diagnostics.Add(Error(pointer + "/const", "The 'const' value must be one of the enum values."));
+                        }
+                    }
+                }
+            }
+
+            private static bool IsAbsoluteUri(string value)
+            {
+                return Uri.TryCreate(value, UriKind.Absolute, out _);
+            }
+
+            private static bool IsPrimitive(JsonStructureTypeKind kind)
+            {
+                return !JsonStructureTypeKinds.IsCompound(kind) && kind != JsonStructureTypeKind.Any &&
+                    kind != JsonStructureTypeKind.None;
+            }
+
+            private static bool IsValueCompatible(JToken value, JsonStructureTypeKind kind)
+            {
+                if (value is not JValue primitive)
+                {
+                    return false;
+                }
+
+                return kind switch
+                {
+                    JsonStructureTypeKind.Null => primitive.Type == JTokenType.Null,
+                    JsonStructureTypeKind.Boolean => primitive.Type == JTokenType.Boolean,
+                    JsonStructureTypeKind.String or JsonStructureTypeKind.Binary or JsonStructureTypeKind.Date
+                        or JsonStructureTypeKind.DateTime or JsonStructureTypeKind.Time or JsonStructureTypeKind.Duration
+                        or JsonStructureTypeKind.Uuid or JsonStructureTypeKind.Uri or JsonStructureTypeKind.JsonPointer
+                        => primitive.Type == JTokenType.String,
+                    JsonStructureTypeKind.Number or JsonStructureTypeKind.Float8 or JsonStructureTypeKind.Float
+                        or JsonStructureTypeKind.Double or JsonStructureTypeKind.Decimal
+                        => primitive.Type == JTokenType.Integer || primitive.Type == JTokenType.Float,
+                    JsonStructureTypeKind.Integer or JsonStructureTypeKind.Int8 or JsonStructureTypeKind.UInt8
+                        or JsonStructureTypeKind.Int16 or JsonStructureTypeKind.UInt16 or JsonStructureTypeKind.Int32
+                        or JsonStructureTypeKind.UInt32 or JsonStructureTypeKind.Int64 or JsonStructureTypeKind.UInt64
+                        or JsonStructureTypeKind.Int128 or JsonStructureTypeKind.UInt128
+                        => primitive.Type == JTokenType.Integer,
+                    _ => false
+                };
+            }
+
+            private static bool IsLocalPointer(string value)
+            {
+                return !string.IsNullOrEmpty(value) && value.StartsWith("#/", StringComparison.Ordinal);
+            }
+
+            private static bool IsReservedKeyword(string value)
+            {
+                return value is "definitions" or "$extends" or "$id" or "$ref" or "$root" or "$schema" or "$uses" or "$offers" or
+                    "abstract" or "additionalProperties" or "choices" or "const" or "default" or "description" or "enum" or
+                    "examples" or "format" or "items" or "maxLength" or "name" or "precision" or "properties" or "required" or
+                    "scale" or "selector" or "type" or "values";
+            }
 
         private static void RequireRootString(string value, string keyword, List<JsonStructureDiagnostic> diagnostics)
         {
@@ -224,6 +668,11 @@ namespace NSwag.JsonStructure.Validation
             {
                 diagnostics.Add(Error(schema.Pointer + "/selector", "A tagged union must not declare a 'selector'; declare '$extends' as well for an inline union."));
             }
+
+            if (schema.Selector != null && !IsIdentifier(schema.Selector))
+            {
+                diagnostics.Add(Error(schema.Pointer + "/selector", "The choice selector must be an identifier."));
+            }
         }
 
         private static void ValidateRequiredProperties(JsonStructureSchema schema, List<JsonStructureDiagnostic> diagnostics)
@@ -268,7 +717,8 @@ namespace NSwag.JsonStructure.Validation
         {
             if (schema.Reference != null)
             {
-                ValidateAbstractReference(document, schema.Reference, schema.ResolvedReference, schema.Pointer + "/type/$ref", diagnostics);
+                var pointer = schema.Pointer + "/type/$ref";
+                ValidateAbstractReference(document, schema.Reference, schema.ResolvedReference, pointer, diagnostics);
             }
         }
 
@@ -294,6 +744,51 @@ namespace NSwag.JsonStructure.Validation
                 // The core abstract keyword prose says abstract types cannot be instantiated directly
                 // and MUST NOT be referenced via $ref. $extends is validated by the resolver instead.
                 diagnostics.Add(Error(pointer, "The '$ref' target '" + reference + "' is abstract and cannot be instantiated directly."));
+            }
+        }
+
+        private static void ValidateInheritance(JsonStructureDocument document, List<JsonStructureDiagnostic> diagnostics)
+        {
+            foreach (var type in document.GetAllTypes())
+            {
+                foreach (var baseType in type.Schema.ResolvedExtendsTypes)
+                {
+                    if (!baseType.Schema.IsAbstract)
+                    {
+                        diagnostics.Add(Error(type.Schema.Pointer + "/$extends",
+                            "Every '$extends' target must be abstract; '" + baseType.FullName + "' is concrete."));
+                    }
+
+                    foreach (var inherited in GetAllInheritedProperties(baseType))
+                    {
+                        if (type.Schema.TryGetProperty(inherited.Name, out _))
+                        {
+                            diagnostics.Add(Error(type.Schema.Pointer + "/properties/" + EscapePointerSegment(inherited.Name),
+                                "The property '" + inherited.Name + "' collides with an inherited property."));
+                        }
+                    }
+                }
+            }
+        }
+
+        private static IEnumerable<JsonStructureProperty> GetAllInheritedProperties(JsonStructureNamedType type)
+        {
+            foreach (var baseType in type.Schema.ResolvedExtendsTypes)
+            {
+                foreach (var property in baseType.Schema.Properties)
+                {
+                    yield return property;
+                }
+
+                foreach (var property in GetAllInheritedProperties(baseType))
+                {
+                    yield return property;
+                }
+            }
+
+            foreach (var property in type.Schema.Properties)
+            {
+                yield return property;
             }
         }
 
@@ -335,7 +830,7 @@ namespace NSwag.JsonStructure.Validation
             var obj = token as JObject;
             if (obj != null)
             {
-                if (obj[JsonStructureKeywords.Ref] != null && !isTypeValue)
+                if (obj[JsonStructureKeywords.Ref] != null && !isTypeValue && !IsSchemaReferencePointer(pointer))
                 {
                     diagnostics.Add(Error(pointer + "/$ref", "The '$ref' keyword is only legal inside a 'type' value."));
                 }
@@ -362,7 +857,7 @@ namespace NSwag.JsonStructure.Validation
             {
                 for (var i = 0; i < array.Count; i++)
                 {
-                    ValidateSourceReferences(array[i], pointer + "/" + i.ToString(System.Globalization.CultureInfo.InvariantCulture), false, diagnostics);
+                    ValidateSourceReferences(array[i], pointer + "/" + i.ToString(System.Globalization.CultureInfo.InvariantCulture), isTypeValue, diagnostics);
                 }
             }
         }
@@ -370,6 +865,15 @@ namespace NSwag.JsonStructure.Validation
         private static JsonStructureDiagnostic Error(string pointer, string message)
         {
             return new JsonStructureDiagnostic(JsonStructureDiagnosticSeverity.Error, pointer, message);
+        }
+
+        private static bool IsSchemaReferencePointer(string pointer)
+        {
+            return pointer.Contains("/properties/", StringComparison.Ordinal) ||
+                pointer.Contains("/choices/", StringComparison.Ordinal) ||
+                pointer.EndsWith("/items", StringComparison.Ordinal) ||
+                pointer.EndsWith("/values", StringComparison.Ordinal) ||
+                pointer.EndsWith("/additionalProperties", StringComparison.Ordinal);
         }
 
         private static bool IsIdentifier(string value)

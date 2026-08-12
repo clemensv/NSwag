@@ -524,7 +524,6 @@ namespace NSwag.JsonStructure.Resolution
                 Name = source.Name,
                 Pointer = pointer,
                 Reference = RewritePointer(source.Reference, namespacePrefix),
-                Extends = RewritePointer(source.Extends, namespacePrefix),
                 IsAbstract = source.IsAbstract,
                 AdditionalPropertiesAllowed = source.AdditionalPropertiesAllowed,
                 Const = source.Const == null ? null : source.Const.DeepClone(),
@@ -532,6 +531,13 @@ namespace NSwag.JsonStructure.Resolution
                 Examples = source.Examples == null ? null : new JArray(source.Examples),
                 SourceJson = source.SourceJson == null ? null : source.SourceJson.DeepClone()
             };
+
+            foreach (var extendsPointer in source.ExtendsPointers.Count == 0
+                ? (source.Extends == null ? Array.Empty<string>() : new[] { source.Extends })
+                : source.ExtendsPointers)
+            {
+                clone.AddExtends(RewritePointer(extendsPointer, namespacePrefix));
+            }
 
             foreach (var member in source.Union)
             {
@@ -654,9 +660,13 @@ namespace NSwag.JsonStructure.Resolution
                 schema.ResolvedReference = Require(document, schema.Reference, schema.Pointer, "type/$ref");
             }
 
-            if (schema.Extends != null)
+            var extendsPointers = schema.ExtendsPointers.Count == 0
+                ? (schema.Extends == null ? Array.Empty<string>() : new[] { schema.Extends })
+                : schema.ExtendsPointers;
+
+            foreach (var extendsPointer in extendsPointers)
             {
-                var baseType = Require(document, schema.Extends, schema.Pointer, JsonStructureKeywords.Extends);
+                var baseType = Require(document, extendsPointer, schema.Pointer, JsonStructureKeywords.Extends);
 
                 if (baseType.Schema == schema)
                 {
@@ -664,7 +674,7 @@ namespace NSwag.JsonStructure.Resolution
                         "The type extends itself.", Combine(schema.Pointer, JsonStructureKeywords.Extends));
                 }
 
-                schema.ResolvedExtends = baseType;
+                schema.AddResolvedExtends(baseType);
             }
 
             foreach (var member in schema.Union)
@@ -715,17 +725,36 @@ namespace NSwag.JsonStructure.Resolution
             var seen = new HashSet<JsonStructureSchema>();
             var chain = new List<string>();
 
-            for (var current = type; current != null; current = current.Schema.ResolvedExtends)
-            {
-                chain.Add(current.FullName);
+            var stack = new HashSet<JsonStructureSchema>();
+            VerifyNoInheritanceCycle(type, stack, new List<string>());
+        }
 
-                if (!seen.Add(current.Schema))
-                {
-                    throw new JsonStructureException(
-                        "The '$extends' chain is cyclic: " + string.Join(" -> ", chain) + ".",
-                        Combine(type.Schema.Pointer, JsonStructureKeywords.Extends));
-                }
+        private static void VerifyNoInheritanceCycle(
+            JsonStructureNamedType type,
+            HashSet<JsonStructureSchema> stack,
+            List<string> chain)
+        {
+            if (type == null)
+            {
+                return;
             }
+
+            if (!stack.Add(type.Schema))
+            {
+                chain.Add(type.FullName);
+                throw new JsonStructureException(
+                    "The '$extends' chain is cyclic: " + string.Join(" -> ", chain) + ".",
+                    Combine(type.Schema.Pointer, JsonStructureKeywords.Extends));
+            }
+
+            chain.Add(type.FullName);
+            foreach (var baseType in type.Schema.ResolvedExtendsTypes)
+            {
+                VerifyNoInheritanceCycle(baseType, stack, chain);
+            }
+
+            chain.RemoveAt(chain.Count - 1);
+            stack.Remove(type.Schema);
         }
 
         private static bool IsImportKeyword(string keyword)
@@ -751,28 +780,34 @@ namespace NSwag.JsonStructure.Resolution
                 return null;
             }
 
-            var value = pointer;
-            var hashIndex = value.IndexOf('#');
-            if (hashIndex == 0)
+            if (pointer[0] != '#')
             {
-                value = value.Substring(1);
+                return null;
             }
-            else if (hashIndex > 0)
-            {
-                value = value.Substring(hashIndex + 1);
-            }
-            else
+
+            var value = Uri.UnescapeDataString(pointer.Substring(1));
+            if (value.Length == 0 || value[0] != '/')
             {
                 return null;
             }
 
             var segments = new List<string>();
-            foreach (var segment in value.Split('/'))
+            foreach (var segment in value.Substring(1).Split('/'))
             {
-                if (segment.Length > 0)
+                if (segment.Length == 0)
                 {
-                    segments.Add(segment.Replace("~1", "/").Replace("~0", "~"));
+                    return null;
                 }
+
+                for (var i = 0; i < segment.Length; i++)
+                {
+                    if (segment[i] == '~' && (i + 1 >= segment.Length || (segment[i + 1] != '0' && segment[i + 1] != '1')))
+                    {
+                        return null;
+                    }
+                }
+
+                segments.Add(segment.Replace("~1", "/").Replace("~0", "~"));
             }
 
             return segments;

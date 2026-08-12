@@ -13,5 +13,5 @@ public partial class {{ Name }}
 {% for property in Properties %}{% for attribute in property.Attributes %}    {{ attribute }}
 {% endfor %}{% if property.Documentation %}    {{ property.Documentation }}
 {% endif %}{% if property.JsonIgnoreSelector %}    {{ property.JsonIgnoreSelector }}
-{% endif %}    public {% if property.IsRequired %}required {% endif %}{{ property.Type }} {{ property.Name }} { {% if property.HasGetter %}get; {% endif %}{% if property.HasSetter %}set; {% endif %}}
+{% endif %}    public {% if property.IsRequired %}required {% endif %}{{ property.Type }} {{ property.Name }} { {% if property.HasGetter %}get; {% endif %}{% if property.HasSetter %}set; {% endif %}}{% if property.DefaultValue %} = {{ property.DefaultValue }};{% endif %}
 {% endfor %}}{% endif %}

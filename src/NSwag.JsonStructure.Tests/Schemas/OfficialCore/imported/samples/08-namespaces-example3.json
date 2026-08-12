@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schemas.example.com/namespaces",
+  "companyName": "Creative Media Inc",
+  "headquarters": {
+    "street": "200 Arts District",
+    "city": "Los Angeles",
+    "state": "California",
+    "zipCode": "90012",
+    "country": "US"
+  },
+  "employees": [
+    {
+      "employeeId": "EMP003",
+      "firstName": "Michael",
+      "lastName": "Chen",
+      "department": {
+        "code": "MKT",
+        "name": "Marketing",
+        "managerId": "EMP001",
+        "budget": "950000.00"
+      },
+      "position": "Marketing Manager",
+      "salary": "95000.00",
+      "hireDate": "2021-01-10",
+      "address": {
+        "street": "456 Sunset Blvd",
+        "city": "Los Angeles",
+        "state": "California",
+        "zipCode": "90028",
+        "country": "US"
+      },
+      "contact": {
+        "email": "michael.chen@company.com",
+        "phone": "+1-555-234-8901"
+      }
+    }
+  ],
+  "departments": [
+    {
+      "code": "MKT",
+      "name": "Marketing",
+      "managerId": "EMP001",
+      "budget": "950000.00"
+    }
+  ],
+  "lastUpdated": "2024-11-20T14:45:00Z"
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schemas.example.com/extensions",
+  "fleetName": "Company Fleet 2024",
+  "totalVehicles": 3,
+  "lastInventoryDate": "2024-11-15T10:30:00Z",
+  "trucks": [
+    {
+      "make": "Ford",
+      "model": "F-150",
+      "year": 2023,
+      "vin": "1FTFW1E50NFB12345",
+      "engineType": "gasoline",
+      "payloadCapacity": 1500,
+      "commercialLicense": false
+    }
+  ],
+  "cars": [
+    {
+      "make": "Tesla", 
+      "model": "Model 3",
+      "year": 2024,
+      "vin": "5YJ3E1EA0KF123456",
+      "engineType": "electric",
+      "doors": 4,
+      "seatingCapacity": 5
+    }
+  ],
+  "motorcycles": [
+    {
+      "make": "Harley-Davidson",
+      "model": "Street 750",
+      "year": 2022,
+      "vin": "1HD1KB4XXNB123456", 
+      "engineType": "gasoline",
+      "engineSize": 749,
+      "style": "cruiser"
+    }
+  ]
+}
