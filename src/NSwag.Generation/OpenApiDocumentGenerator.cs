@@ -111,6 +111,20 @@ namespace NSwag.Generation
                 operationParameter.Description = description;
             }
 
+            if (_settings.SchemaDialect == global::NSwag.Generation.SchemaDialect.JsonStructure &&
+                _schemaResolver is OpenApiSchemaResolver openApiResolver)
+            {
+                var structureSchema = _settings.GenerateSchema(openApiResolver.Document, contextualParameter, typeDescription.IsNullable, _schemaResolver, SchemaGenerator);
+                if (_settings.SchemaSettings.SchemaType == SchemaType.Swagger2)
+                {
+                    operationParameter.CustomSchema = structureSchema;
+                }
+                else
+                {
+                    operationParameter.Schema = structureSchema;
+                }
+            }
+
             return operationParameter;
         }
 

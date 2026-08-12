@@ -401,8 +401,8 @@ namespace NSwag.Generation.WebApi.Processors
                     IsRequired = isRequired,
                     IsNullableRaw = isNullable,
                     Description = contextualParameter.GetDescription(_settings.SchemaSettings),
-                    Schema = context.SchemaGenerator.GenerateWithReferenceAndNullability<JsonSchema>(
-                        contextualParameter.ParameterType, isNullable, schemaResolver: context.SchemaResolver)
+                    Schema = context.Settings.GenerateSchema(
+                        context.Document, contextualParameter.ParameterType, isNullable, context.SchemaResolver, context.SchemaGenerator as OpenApiSchemaGenerator)
                 };
                 operation.Parameters.Add(operationParameter);
             }

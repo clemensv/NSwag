@@ -1,0 +1,109 @@
+openapi: "3.1.0"
+info:
+  title: API with Examples
+  version: "0.1.0"
+  description: >-
+    Adapted from the OpenAPI Initiative's "API with Examples" sample. This
+    document demonstrates multiple named OAS `examples` attached to a single
+    JSON Structure schema, and the core `enum` keyword (which, unlike most
+    validation constraints, is part of JSON Structure Core and therefore
+    available under every dialect, including the plain core meta-schema used
+    here).
+jsonSchemaDialect: https://json-structure.org/meta/core/v0/#
+paths:
+  /versions:
+    get:
+      summary: List API versions
+      operationId: listVersions
+      responses:
+        "200":
+          description: Currently supported and deprecated versions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionList"
+              examples:
+                oneVersion:
+                  summary: A single current version
+                  value:
+                    versions:
+                      - id: v2.0
+                        status: CURRENT
+                        updated: "2024-11-01T00:00:00Z"
+                twoVersions:
+                  summary: A current and a deprecated version
+                  value:
+                    versions:
+                      - id: v2.0
+                        status: CURRENT
+                        updated: "2024-11-01T00:00:00Z"
+                      - id: v1.0
+                        status: DEPRECATED
+                        updated: "2019-03-15T00:00:00Z"
+        "300":
+          description: Multiple choices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionList"
+              examples:
+                multipleChoices:
+                  summary: Multiple representations available
+                  value:
+                    versions:
+                      - id: v2.0
+                        status: CURRENT
+                        updated: "2024-11-01T00:00:00Z"
+                      - id: v1.0
+                        status: EXPERIMENTAL
+                        updated: "2018-01-01T00:00:00Z"
+components:
+  schemas:
+    Version:
+      name: Version
+      type: object
+      required:
+        - id
+        - status
+        - updated
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum:
+            - CURRENT
+            - DEPRECATED
+            - EXPERIMENTAL
+        updated:
+          type: datetime
+    VersionList:
+      name: VersionList
+      type: object
+      required:
+        - versions
+      properties:
+        versions:
+          type: array
+          items:
+            type:
+              $ref: "#/definitions/Version"
+      definitions:
+        Version:
+          name: Version
+          type: object
+          required:
+            - id
+            - status
+            - updated
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+              enum:
+                - CURRENT
+                - DEPRECATED
+                - EXPERIMENTAL
+            updated:
+              type: datetime

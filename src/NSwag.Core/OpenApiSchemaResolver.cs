@@ -16,7 +16,8 @@ namespace NSwag
     {
         private readonly ITypeNameGenerator _typeNameGenerator;
 
-        private OpenApiDocument Document => (OpenApiDocument)RootObject;
+        /// <summary>Gets the document being populated.</summary>
+        public OpenApiDocument Document => (OpenApiDocument)RootObject;
 
         /// <summary>Initializes a new instance of the <see cref="OpenApiSchemaResolver" /> class.</summary>
         /// <param name="document">The Swagger document.</param>

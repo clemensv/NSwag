@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using NSwag.JsonStructure.OpenApi;
 using Xunit;
 
 namespace NSwag.Core.Yaml.Tests
@@ -82,6 +83,29 @@ paths:
             Assert.Equal(JObject.Parse(@"{""bar"": ""baz""}"), document.Paths.First().Value.ExtensionData["x-swagger-router-controller"]);
             Assert.Equal("baz", document.Paths.First().Value["get"].Responses["200"].Description);
             Assert.Contains("bar: baz", yaml);
+        }
+
+        [Fact]
+        public async Task When_oas31_yaml_contains_json_structure_schema_then_it_is_preprocessed()
+        {
+            var yaml = @"openapi: 3.1.0
+jsonSchemaDialect: https://json-structure.org/meta/core/v0/#
+info:
+  title: Structure
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Telemetry:
+      type: object
+      properties:
+        sequence:
+          type: uint64";
+
+            var document = await OpenApiYamlDocument.FromYamlAsync(yaml, "https://example.com/openapi.yaml");
+
+            Assert.Equal("https://json-structure.org/meta/core/v0/#", document.JsonSchemaDialect);
+            Assert.True(document.Components.Schemas["Telemetry"].ExtensionData.ContainsKey(JsonStructureDocumentPreprocessor.ExtensionName));
         }
     }
 }

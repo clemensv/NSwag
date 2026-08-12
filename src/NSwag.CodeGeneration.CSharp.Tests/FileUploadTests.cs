@@ -53,7 +53,8 @@ namespace NSwag.CodeGeneration.CSharp.Tests
     ""schemas"": { }
   }
 }";
-            var document = await OpenApiDocument.FromJsonAsync(json, null, SchemaType.OpenApi3, null);
+            var document = await OpenApiDocument.FromJsonAsync(json, null, SchemaType.OpenApi3,
+                (OpenApiDocumentLoadSettings)null);
 
             // Act
             var codeGenerator = new CSharpClientGenerator(document, new CSharpClientGeneratorSettings

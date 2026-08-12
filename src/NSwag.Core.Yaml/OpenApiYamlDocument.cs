@@ -128,6 +128,15 @@ namespace NSwag
             return serializer.Serialize(deserializedObject);
         }
 
+        /// <summary>Converts the document to OpenAPI 3.1 JSON Structure YAML.</summary>
+        public static string ToYaml(this OpenApiDocument document, OpenApiDocumentOutputType outputType)
+        {
+            var json = document.ToJson(outputType);
+            var expConverter = new ExpandoObjectConverter();
+            dynamic deserializedObject = JsonConvert.DeserializeObject<ExpandoObject>(json, expConverter);
+            return new Serializer().Serialize(deserializedObject);
+        }
+
         /// <summary>Creates a Swagger specification from a JSON file.</summary>
         /// <param name="filePath">The file path.</param>
         /// <param name="cancellationToken">The cancellation token.</param>

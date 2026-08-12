@@ -10,6 +10,7 @@ using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.CSharp;
 using NSwag.CodeGeneration.CSharp.Models;
+using NSwag.JsonStructure.CodeGeneration;
 
 namespace NSwag.CodeGeneration.CSharp
 {
@@ -19,6 +20,7 @@ namespace NSwag.CodeGeneration.CSharp
         private readonly CSharpGeneratorBaseSettings _settings;
         private readonly CSharpTypeResolver _resolver;
         private readonly OpenApiDocument _document;
+        private readonly JsonStructureCodeGenerationContext _jsonStructure;
 
         /// <summary>Initializes a new instance of the <see cref="CSharpGeneratorBase"/> class.</summary>
         /// <param name="document">The document.</param>
@@ -30,6 +32,7 @@ namespace NSwag.CodeGeneration.CSharp
             _document = document;
             _settings = settings;
             _resolver = resolver;
+            _jsonStructure = new JsonStructureCodeGenerationContext(document, document?.Definitions.Keys);
         }
 
         /// <summary>Gets the type.</summary>
@@ -42,6 +45,11 @@ namespace NSwag.CodeGeneration.CSharp
             if (schema == null)
             {
                 return "void";
+            }
+
+            if (_jsonStructure.TryResolvePlaceholder(schema, out var jsonStructureName))
+            {
+                return jsonStructureName;
             }
 
             if (schema.ActualTypeSchema.IsBinary)
@@ -101,7 +109,7 @@ namespace NSwag.CodeGeneration.CSharp
         protected override IEnumerable<CodeArtifact> GenerateDtoTypes()
         {
             var generator = new CSharpGenerator(_document, _settings.CSharpGeneratorSettings, _resolver);
-            return generator.GenerateTypes();
+            return generator.GenerateTypes().Concat(JsonStructureCSharpGenerator.Generate(_jsonStructure, _settings.CSharpGeneratorSettings));
         }
     }
 }

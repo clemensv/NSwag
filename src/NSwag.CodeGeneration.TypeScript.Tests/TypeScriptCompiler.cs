@@ -24,7 +24,7 @@ public class TypeScriptCompiler
                 {
                     WorkingDirectory = workingDirectory,
                     FileName = NpxPath.Value,
-                    Arguments = $"tsc \"{tempFilePath}\"",
+                    Arguments = $"tsc --target es2020 --lib es2020 \"{tempFilePath}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,

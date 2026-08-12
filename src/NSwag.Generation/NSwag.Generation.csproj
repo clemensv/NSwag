@@ -3,7 +3,7 @@
     <TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- obsolete warning -->
-    <NoWarn>$(NoWarn),618</NoWarn>
+    <NoWarn>$(NoWarn),618,CA1861,CA1859</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NSwag.Core\NSwag.Core.csproj" />
+    <ProjectReference Include="..\NSwag.JsonStructure\NSwag.JsonStructure.csproj" />
   </ItemGroup>
 
 </Project>

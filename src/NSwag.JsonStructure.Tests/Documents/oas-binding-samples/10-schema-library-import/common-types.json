@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-structure.org/meta/validation/v0/#",
+  "$id": "https://example.com/schemas/common-types.json",
+  "name": "Address",
+  "type": "object",
+  "description": "A shared JSON Structure schema library, imported by openapi.yaml via $import.",
+  "properties": {
+    "street": { "type": "string" },
+    "city": { "type": "string" },
+    "postalCode": { "type": "string" },
+    "country": { "type": "string", "pattern": "^[A-Z]{2}$" }
+  },
+  "required": ["street", "city", "postalCode", "country"],
+  "definitions": {
+    "Money": {
+      "type": "object",
+      "properties": {
+        "amount": { "type": "decimal", "precision": 12, "scale": 2 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+      },
+      "required": ["amount", "currency"]
+    }
+  }
+}

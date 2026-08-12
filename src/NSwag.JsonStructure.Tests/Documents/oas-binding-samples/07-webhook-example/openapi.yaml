@@ -1,0 +1,67 @@
+openapi: "3.1.0"
+info:
+  title: Webhook Example
+  version: "1.0.0"
+  description: >-
+    Demonstrates the OAS 3.1 top-level `webhooks` map together with a JSON
+    Structure `choice` type (tagged union): the payload posted to the
+    `newPetEvent` webhook is either a `petCreated` or a `petDeleted` event,
+    and JSON Structure's discriminated union — not OAS `oneOf`/`discriminator`
+    — expresses that choice.
+jsonSchemaDialect: https://json-structure.org/meta/core/v0/#
+paths: {}
+webhooks:
+  newPetEvent:
+    post:
+      summary: Notifies subscribers about pet lifecycle events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetEvent"
+      responses:
+        "200":
+          description: Return a 200 status to acknowledge receipt of the event
+components:
+  schemas:
+    Pet:
+      name: Pet
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: int64
+        name:
+          type: string
+    PetEvent:
+      name: PetEvent
+      type: choice
+      choices:
+        petCreated:
+          type: object
+          properties:
+            id:
+              type: int64
+            pet:
+              type:
+                $ref: "#/definitions/Pet"
+        petDeleted:
+          type: object
+          properties:
+            id:
+              type: int64
+      definitions:
+        Pet:
+          name: Pet
+          type: object
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: int64
+            name:
+              type: string

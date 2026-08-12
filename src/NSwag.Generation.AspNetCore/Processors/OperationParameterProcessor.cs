@@ -427,8 +427,8 @@ namespace NSwag.Generation.AspNetCore.Processors
                     IsRequired = extendedApiParameter.IsRequired(_settings.RequireParametersWithoutDefault),
                     IsNullableRaw = isNullable,
                     Description = extendedApiParameter.GetDocumentation(),
-                    Schema = context.SchemaGenerator.GenerateWithReferenceAndNullability<JsonSchema>(
-                        contextualParameterType, isNullable, schemaResolver: context.SchemaResolver)
+                    Schema = context.Settings.GenerateSchema(
+                        context.Document, contextualParameterType, isNullable, context.SchemaResolver, context.SchemaGenerator as OpenApiSchemaGenerator)
                 };
             }
 

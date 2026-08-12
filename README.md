@@ -90,6 +90,19 @@ The project is developed and maintained by [Rico Suter](http://rsuter.com) and o
 
 - [NSwag](https://www.npmjs.com/package/nswag): Command line tools (.NET and .NET Core) distributed as NPM package
 
+### JSON Structure support
+
+See [JSON Structure support](docs/JsonStructure.md) for dialects, type mappings, import policy, OpenAPI 3.1 behavior, generated shapes, and limitations.
+
+### JSON Structure CLI options
+
+The `openapi2csclient`, `openapi2tsclient`, and `aspnetcore2openapi` commands
+accept `SchemaDialect=JsonStructure`, `JsonStructureDialect=Core|Extended|Validation`,
+`JsonStructureAllowNetwork`, `JsonStructureAllowFileSystem`,
+`JsonStructureAllowedHosts`, and `JsonStructureDerivedMetaSchemaAllowlist`.
+`OutputType=OpenApi31JsonStructure` enables OpenAPI 3.1 JSON Structure output.
+All defaults preserve the existing JSON Schema and document output behavior.
+
 ### NuGet Packages
 
 #### Specification

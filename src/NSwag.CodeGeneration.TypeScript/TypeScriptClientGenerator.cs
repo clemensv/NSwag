@@ -10,6 +10,7 @@ using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.TypeScript;
 using NSwag.CodeGeneration.TypeScript.Models;
+using NSwag.JsonStructure.CodeGeneration;
 
 namespace NSwag.CodeGeneration.TypeScript
 {
@@ -19,6 +20,7 @@ namespace NSwag.CodeGeneration.TypeScript
         private readonly OpenApiDocument _document;
         private readonly TypeScriptTypeResolver _resolver;
         private readonly TypeScriptExtensionCode _extensionCode;
+        private readonly JsonStructureCodeGenerationContext _jsonStructure;
 
         /// <summary>Initializes a new instance of the <see cref="TypeScriptClientGenerator" /> class.</summary>
         /// <param name="document">The Swagger document.</param>
@@ -41,6 +43,7 @@ namespace NSwag.CodeGeneration.TypeScript
 
             _document = document ?? throw new ArgumentNullException(nameof(document));
             _resolver = resolver;
+            _jsonStructure = new JsonStructureCodeGenerationContext(_document, _document.Definitions.Keys);
             _resolver.RegisterSchemaDefinitions(_document.Definitions);
 
             _extensionCode = new TypeScriptExtensionCode(
@@ -65,6 +68,11 @@ namespace NSwag.CodeGeneration.TypeScript
             if (schema == null)
             {
                 return "void";
+            }
+
+            if (_jsonStructure.TryResolvePlaceholder(schema, out var jsonStructureName))
+            {
+                return jsonStructureName;
             }
 
             if (schema.ActualTypeSchema.IsBinary)
@@ -115,7 +123,7 @@ namespace NSwag.CodeGeneration.TypeScript
         protected override IEnumerable<CodeArtifact> GenerateDtoTypes()
         {
             var generator = new TypeScriptGenerator(_document, Settings.TypeScriptGeneratorSettings, _resolver);
-            return generator.GenerateTypes(_extensionCode);
+            return generator.GenerateTypes(_extensionCode).Concat(JsonStructureTypeScriptGenerator.Generate(_jsonStructure, Settings.TypeScriptGeneratorSettings));
         }
 
         /// <summary>Creates an operation model.</summary>
