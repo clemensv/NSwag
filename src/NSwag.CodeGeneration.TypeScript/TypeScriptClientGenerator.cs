@@ -11,6 +11,7 @@ using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.TypeScript;
 using NSwag.CodeGeneration.TypeScript.Models;
 using NSwag.JsonStructure.CodeGeneration;
+using NSwag.JsonStructure.OpenApi;
 
 namespace NSwag.CodeGeneration.TypeScript
 {
@@ -21,6 +22,7 @@ namespace NSwag.CodeGeneration.TypeScript
         private readonly TypeScriptTypeResolver _resolver;
         private readonly TypeScriptExtensionCode _extensionCode;
         private readonly JsonStructureCodeGenerationContext _jsonStructure;
+        private readonly JsonStructureTypeScriptTypeResolver _jsonStructureResolver;
 
         /// <summary>Initializes a new instance of the <see cref="TypeScriptClientGenerator" /> class.</summary>
         /// <param name="document">The Swagger document.</param>
@@ -43,7 +45,9 @@ namespace NSwag.CodeGeneration.TypeScript
 
             _document = document ?? throw new ArgumentNullException(nameof(document));
             _resolver = resolver;
-            _jsonStructure = new JsonStructureCodeGenerationContext(_document, _document.Definitions.Keys);
+            _jsonStructure = new JsonStructureCodeGenerationContext(_document, GetOrdinaryDefinitionNames(_document));
+            _jsonStructureResolver = new JsonStructureTypeScriptTypeResolver(Settings.TypeScriptGeneratorSettings);
+            _jsonStructureResolver.SetNames(JsonStructureTypeScriptGenerator.CreateNames(_jsonStructure));
             _resolver.RegisterSchemaDefinitions(_document.Definitions);
 
             _extensionCode = new TypeScriptExtensionCode(
@@ -70,9 +74,16 @@ namespace NSwag.CodeGeneration.TypeScript
                 return "void";
             }
 
-            if (_jsonStructure.TryResolvePlaceholder(schema, out var jsonStructureName))
+            if (_jsonStructure.TryGetPlaceholderModel(schema, out var jsonStructureModel, out _))
             {
-                return jsonStructureName;
+                if (jsonStructureModel.RootType != null)
+                {
+                    return _jsonStructureResolver.GetName(jsonStructureModel.RootType, _jsonStructure);
+                }
+                if (jsonStructureModel.RootTypeReference != null)
+                {
+                    return _jsonStructureResolver.Resolve(jsonStructureModel.RootTypeReference, _jsonStructure);
+                }
             }
 
             if (schema.ActualTypeSchema.IsBinary)
@@ -123,7 +134,30 @@ namespace NSwag.CodeGeneration.TypeScript
         protected override IEnumerable<CodeArtifact> GenerateDtoTypes()
         {
             var generator = new TypeScriptGenerator(_document, Settings.TypeScriptGeneratorSettings, _resolver);
-            return generator.GenerateTypes(_extensionCode).Concat(JsonStructureTypeScriptGenerator.Generate(_jsonStructure, Settings.TypeScriptGeneratorSettings));
+            var jsonStructureStubs = _document.Definitions
+                .Where(pair => IsJsonStructureStub(pair.Value))
+                .Select(pair => pair.Key)
+                .ToHashSet(StringComparer.Ordinal);
+            return generator.GenerateTypes(_extensionCode)
+                .Where(artifact => !jsonStructureStubs.Contains(artifact.TypeName))
+                .Concat(JsonStructureTypeScriptGenerator.Generate(
+                    _jsonStructure,
+                    Settings.TypeScriptGeneratorSettings,
+                    _jsonStructureResolver));
+        }
+
+        private static IEnumerable<string> GetOrdinaryDefinitionNames(OpenApiDocument document)
+        {
+            return document?.Definitions
+                .Where(pair => !IsJsonStructureStub(pair.Value))
+                .Select(pair => pair.Key) ?? Enumerable.Empty<string>();
+        }
+
+        private static bool IsJsonStructureStub(JsonSchema schema)
+        {
+            return schema?.ExtensionData?.TryGetValue(JsonStructureDocumentPreprocessor.ExtensionName, out var marker) == true &&
+                   marker is bool isStub &&
+                   isStub;
         }
 
         /// <summary>Creates an operation model.</summary>

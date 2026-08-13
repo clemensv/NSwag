@@ -11,6 +11,26 @@ namespace NSwag.CodeGeneration.TypeScript.Tests;
 public class JsonStructureTypeScriptGeneratorTests
 {
     [Fact]
+    public void Aggregated_resources_keep_local_pet_types_and_qualified_roots()
+    {
+        var document = CreateAggregateNamespaceDocument();
+        var settings = new TypeScriptClientGeneratorSettings();
+        settings.TypeScriptGeneratorSettings.MarkOptionalProperties = true;
+        var generator = new TypeScriptClientGenerator(document, settings);
+
+        var code = generator.GenerateFile();
+
+        Assert.Equal("Pet.Pet", generator.GetTypeName(document.Definitions["Pet"], false, null));
+        Assert.Equal("PetListResponse.PetListResponse",
+            generator.GetTypeName(document.Definitions["PetListResponse"], false, null));
+        Assert.Contains("export namespace Pet", code);
+        Assert.Contains("export namespace PetListResponse", code);
+        Assert.Contains("pets?: Pet[]", code);
+        Assert.DoesNotContain("Pet_2", code);
+        TypeScriptCompiler.AssertCompile(code);
+    }
+
+    [Fact]
     public async Task Generates_and_compiles_representative_corpus()
     {
         var outputs = new List<string>();
@@ -193,5 +213,57 @@ public class JsonStructureTypeScriptGeneratorTests
         Assert.Contains("namespace Value", code);
         Assert.Contains("value", code);
         Assert.Contains("export type Inline = string | number;", code);
+    }
+
+    private static OpenApiDocument CreateAggregateNamespaceDocument()
+    {
+        var pet = new JsonStructureParser().Parse("""
+            {
+              "name": "Pet",
+              "type": "object",
+              "properties": { "name": { "type": "string" } }
+            }
+            """);
+        var response = new JsonStructureParser().Parse("""
+            {
+              "name": "PetListResponse",
+              "type": "object",
+              "properties": {
+                "pets": {
+                  "type": "array",
+                  "items": { "type": { "$ref": "#/definitions/Pet" } }
+                }
+              },
+              "definitions": {
+                "Pet": {
+                  "type": "object",
+                  "properties": {
+                    "tags": { "type": "set", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+            """);
+        var document = new OpenApiDocument();
+        document.Definitions["Pet"] = CreatePlaceholder("#/components/schemas/Pet");
+        document.Definitions["PetListResponse"] = CreatePlaceholder("#/components/schemas/PetListResponse");
+        document.AttachJsonStructureDocumentModel(new JsonStructureDocumentModel(
+        [
+            new KeyValuePair<string, JsonStructureDocument>("#/components/schemas/Pet", pet),
+            new KeyValuePair<string, JsonStructureDocument>("#/components/schemas/PetListResponse", response)
+        ]));
+        return document;
+    }
+
+    private static NJsonSchema.JsonSchema CreatePlaceholder(string correlationKey)
+    {
+        return new NJsonSchema.JsonSchema
+        {
+            ExtensionData = new Dictionary<string, object>
+            {
+                [JsonStructureDocumentPreprocessor.ExtensionName] = true,
+                [JsonStructureDocumentPreprocessor.CorrelationKeyExtensionName] = correlationKey
+            }
+        };
     }
 }

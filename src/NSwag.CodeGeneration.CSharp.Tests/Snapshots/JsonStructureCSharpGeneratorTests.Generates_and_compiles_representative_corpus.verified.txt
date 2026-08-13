@@ -9,40 +9,31 @@ namespace Corpus.Generated
 
     
 
-    public partial class BasicTypes
+    namespace BasicTypes
     {
-        public string stringField { get; set; }
-        public int intField { get; set; }
-        public long? longField { get; set; }
-        public float? floatField { get; set; }
-        public double? doubleField { get; set; }
-        public bool? booleanField { get; set; }
-        public System.Guid? uuidField { get; set; }
-        public byte[]? bytesField { get; set; }
+        public partial class BasicTypes
+        {
+            public string stringField { get; set; }
+            public int intField { get; set; }
+            public long? longField { get; set; }
+            public float? floatField { get; set; }
+            public double? doubleField { get; set; }
+            public bool? booleanField { get; set; }
+            public System.Guid? uuidField { get; set; }
+            public byte[]? bytesField { get; set; }
+        }
     }
 
     public static class JsonStructureConverters
     {
         public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
         {
-            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();
-            settings.Converters.Add(new Int64StringConverter());
+            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();        settings.Converters.Add(new Int64StringConverter());
             settings.Converters.Add(new NullableInt64StringConverter());
-            settings.Converters.Add(new UInt64StringConverter());
-            settings.Converters.Add(new NullableUInt64StringConverter());
-            settings.Converters.Add(new Int128StringConverter());
-            settings.Converters.Add(new NullableInt128StringConverter());
-            settings.Converters.Add(new UInt128StringConverter());
-            settings.Converters.Add(new NullableUInt128StringConverter());
-            settings.Converters.Add(new DecimalStringConverter());
-            settings.Converters.Add(new NullableDecimalStringConverter());
-            settings.Converters.Add(new TimeSpanIso8601Converter());
-            settings.Converters.Add(new NullableTimeSpanIso8601Converter());
-            settings.Converters.Add(new BinaryBase64UrlConverter());
-            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
-    }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
+    }
+    public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
     {
         public override long ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
         public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
@@ -51,113 +42,6 @@ namespace Corpus.Generated
     {
         public override long? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
         public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong>
-    {
-        public override ulong ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong?>
-    {
-        public override ulong? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class Int128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128>
-    {
-        public override global::System.Int128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128?>
-    {
-        public override global::System.Int128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128>
-    {
-        public override global::System.UInt128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128?>
-    {
-        public override global::System.UInt128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class DecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal>
-    {
-        public override decimal ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableDecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal?>
-    {
-        public override decimal? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan>
-    {
-        public override global::System.TimeSpan ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Xml.XmlConvert.ToString(value));
-    }
-    public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan?>
-    {
-        public override global::System.TimeSpan? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan? value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
-    }
-    public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> where T : struct
-    {
-        private readonly global::System.Reflection.ConstructorInfo _constructor;
-        private readonly global::System.Reflection.PropertyInfo[] _properties;
-        public TupleJsonConverter()
-        {
-            _constructor = global::System.Linq.Enumerable.First(typeof(T).GetConstructors());
-            _properties = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(
-                _constructor.GetParameters(), parameter => typeof(T).GetProperty(parameter.Name!,
-                    global::System.Reflection.BindingFlags.Public | global::System.Reflection.BindingFlags.Instance |
-                    global::System.Reflection.BindingFlags.IgnoreCase)
-                ?? throw new global::System.InvalidOperationException("Property not found for tuple element '" + parameter.Name + "'.")));
-        }
-        public override T ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, T existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var values = serializer.Deserialize<global::Newtonsoft.Json.Linq.JArray>(reader);
-            if (values == null || values.Count != _properties.Length) throw new global::Newtonsoft.Json.JsonSerializationException("Wrong number of tuple elements.");
-            var arguments = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(_properties,
-                (property, index) => values[index].ToObject(property.PropertyType, serializer)));
-            return (T)_constructor.Invoke(arguments);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, T value, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            writer.WriteStartArray();
-            foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
-            writer.WriteEndArray();
-        }
-    }
-
-    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var value = (string)reader.Value ?? string.Empty;
-            value = value.Replace('-', '+').Replace('_', '/');
-            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
-            return global::System.Convert.FromBase64String(value);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
-    }
-    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var text = (string)reader.Value ?? string.Empty;
-            var bytes = new byte[text.Length / 2];
-            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
-            return bytes;
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 
@@ -175,187 +59,66 @@ namespace Corpus.Generated
 
     
 
-    public abstract partial class BaseEntity
+    namespace ChoiceTypes
     {
-        public string? name { get; set; }
-        public string? entityType { get; set; }
-    }
-
-    public partial class Person : BaseEntity
-    {
-        public int? age { get; set; }
-    }
-
-    public partial class Company : BaseEntity
-    {
-        public int? employees { get; set; }
-    }
-
-    public partial class ChoiceTypes
-    {
-        public TaggedChoice taggedChoice { get; set; }
-        public EntityChoice? inlineChoice { get; set; }
-        public string? nullableString { get; set; }
-    }
-
-    [global::Newtonsoft.Json.JsonConverter(typeof(TaggedChoiceJsonConverter))]public abstract partial class TaggedChoice
-    {
-    }
-
-    [global::Newtonsoft.Json.JsonConverter(typeof(EntityChoiceJsonConverter))]
-    public partial class EntityChoice
-    {
-        public BaseEntity Value { get; set; }
-    }
-
-    public static class JsonStructureConverters
-    {
-        public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
+        public abstract partial class BaseEntity
         {
-            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();
-            settings.Converters.Add(new Int64StringConverter());
-            settings.Converters.Add(new NullableInt64StringConverter());
-            settings.Converters.Add(new UInt64StringConverter());
-            settings.Converters.Add(new NullableUInt64StringConverter());
-            settings.Converters.Add(new Int128StringConverter());
-            settings.Converters.Add(new NullableInt128StringConverter());
-            settings.Converters.Add(new UInt128StringConverter());
-            settings.Converters.Add(new NullableUInt128StringConverter());
-            settings.Converters.Add(new DecimalStringConverter());
-            settings.Converters.Add(new NullableDecimalStringConverter());
-            settings.Converters.Add(new TimeSpanIso8601Converter());
-            settings.Converters.Add(new NullableTimeSpanIso8601Converter());
-            settings.Converters.Add(new BinaryBase64UrlConverter());
-            settings.Converters.Add(new BinaryHexConverter());
-            return settings;
-        }
-    }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
-    {
-        public override long ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt64StringConverter : global::Newtonsoft.Json.JsonConverter<long?>
-    {
-        public override long? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong>
-    {
-        public override ulong ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong?>
-    {
-        public override ulong? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class Int128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128>
-    {
-        public override global::System.Int128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128?>
-    {
-        public override global::System.Int128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128>
-    {
-        public override global::System.UInt128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128?>
-    {
-        public override global::System.UInt128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class DecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal>
-    {
-        public override decimal ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableDecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal?>
-    {
-        public override decimal? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan>
-    {
-        public override global::System.TimeSpan ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Xml.XmlConvert.ToString(value));
-    }
-    public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan?>
-    {
-        public override global::System.TimeSpan? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan? value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
-    }
-    public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> where T : struct
-    {
-        private readonly global::System.Reflection.ConstructorInfo _constructor;
-        private readonly global::System.Reflection.PropertyInfo[] _properties;
-        public TupleJsonConverter()
-        {
-            _constructor = global::System.Linq.Enumerable.First(typeof(T).GetConstructors());
-            _properties = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(
-                _constructor.GetParameters(), parameter => typeof(T).GetProperty(parameter.Name!,
-                    global::System.Reflection.BindingFlags.Public | global::System.Reflection.BindingFlags.Instance |
-                    global::System.Reflection.BindingFlags.IgnoreCase)
-                ?? throw new global::System.InvalidOperationException("Property not found for tuple element '" + parameter.Name + "'.")));
-        }
-        public override T ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, T existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var values = serializer.Deserialize<global::Newtonsoft.Json.Linq.JArray>(reader);
-            if (values == null || values.Count != _properties.Length) throw new global::Newtonsoft.Json.JsonSerializationException("Wrong number of tuple elements.");
-            var arguments = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(_properties,
-                (property, index) => values[index].ToObject(property.PropertyType, serializer)));
-            return (T)_constructor.Invoke(arguments);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, T value, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            writer.WriteStartArray();
-            foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
-            writer.WriteEndArray();
+            public string? name { get; set; }
+            public string? entityType { get; set; }
         }
     }
 
-    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
+    namespace ChoiceTypes
     {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        public partial class Person : global::Corpus.Generated.ChoiceTypes.BaseEntity
         {
-            var value = (string)reader.Value ?? string.Empty;
-            value = value.Replace('-', '+').Replace('_', '/');
-            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
-            return global::System.Convert.FromBase64String(value);
+            public int? age { get; set; }
         }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
-    }
-    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var text = (string)reader.Value ?? string.Empty;
-            var bytes = new byte[text.Length / 2];
-            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
-            return bytes;
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
-    public sealed class EntityChoiceJsonConverter : global::Newtonsoft.Json.JsonConverter<EntityChoice>
+    namespace ChoiceTypes
     {
-        public override EntityChoice ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, EntityChoice existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        public partial class Company : global::Corpus.Generated.ChoiceTypes.BaseEntity
         {
-            var objectValue = global::Newtonsoft.Json.Linq.JObject.Load(reader);        if (objectValue.Property("age") != null) return new EntityChoice { Value = objectValue.ToObject<Person>(serializer)! };
-            if (objectValue.Property("employees") != null) return new EntityChoice { Value = objectValue.ToObject<Company>(serializer)! };
-            throw new global::Newtonsoft.Json.JsonSerializationException("No known variant property found for EntityChoice.");
+            public int? employees { get; set; }
         }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, EntityChoice value, global::Newtonsoft.Json.JsonSerializer serializer)
+    }
+
+    namespace ChoiceTypes
+    {
+        public partial class ChoiceTypes
+        {
+            public global::Corpus.Generated.ChoiceTypes.TaggedChoice taggedChoice { get; set; }
+            public global::Corpus.Generated.ChoiceTypes.EntityChoice? inlineChoice { get; set; }
+            public string? nullableString { get; set; }
+        }
+    }
+
+    namespace ChoiceTypes
+    {
+        [global::Newtonsoft.Json.JsonConverter(typeof(ChoiceTypes_TaggedChoiceJsonConverter))]public abstract partial class TaggedChoice
+        {
+        }
+    }
+
+    namespace ChoiceTypes
+    {
+        [global::Newtonsoft.Json.JsonConverter(typeof(ChoiceTypes_EntityChoiceJsonConverter))]
+        public partial class EntityChoice
+        {
+            public global::Corpus.Generated.ChoiceTypes.BaseEntity Value { get; set; }
+        }
+    }
+
+    public sealed class ChoiceTypes_EntityChoiceJsonConverter : global::Newtonsoft.Json.JsonConverter<ChoiceTypes.EntityChoice>
+    {
+        public override ChoiceTypes.EntityChoice ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ChoiceTypes.EntityChoice existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var objectValue = global::Newtonsoft.Json.Linq.JObject.Load(reader);        if (objectValue.Property("age") != null) return new ChoiceTypes.EntityChoice { Value = objectValue.ToObject<global::Corpus.Generated.ChoiceTypes.Person>(serializer)! };
+            if (objectValue.Property("employees") != null) return new ChoiceTypes.EntityChoice { Value = objectValue.ToObject<global::Corpus.Generated.ChoiceTypes.Company>(serializer)! };
+            throw new global::Newtonsoft.Json.JsonSerializationException("No known variant property found for ChoiceTypes.EntityChoice.");
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ChoiceTypes.EntityChoice value, global::Newtonsoft.Json.JsonSerializer serializer)
             => serializer.Serialize(writer, value.Value);
     }
 
@@ -376,171 +139,15 @@ namespace Corpus.Generated
 
     
 
-    public partial class Collections
+    namespace Collections
     {
-        public System.Collections.Generic.ICollection<string> stringArray { get; set; }
-        public System.Collections.Generic.HashSet<int>? numberSet { get; set; }
-        public System.Collections.Generic.IDictionary<string, double>? stringToNumberMap { get; set; }
-        public System.Collections.Generic.ICollection<System.Collections.Generic.ICollection<string>>? nestedArray { get; set; }
-    }
-
-    public partial class JsonStructureType
-    {
-    }
-
-    public partial class JsonStructureType
-    {
-    }
-
-    public partial class JsonStructureType
-    {
-    }
-
-    public partial class JsonStructureType
-    {
-    }
-
-    public partial class JsonStructureType
-    {
-    }
-
-    public static class JsonStructureConverters
-    {
-        public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
+        public partial class Collections
         {
-            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();
-            settings.Converters.Add(new Int64StringConverter());
-            settings.Converters.Add(new NullableInt64StringConverter());
-            settings.Converters.Add(new UInt64StringConverter());
-            settings.Converters.Add(new NullableUInt64StringConverter());
-            settings.Converters.Add(new Int128StringConverter());
-            settings.Converters.Add(new NullableInt128StringConverter());
-            settings.Converters.Add(new UInt128StringConverter());
-            settings.Converters.Add(new NullableUInt128StringConverter());
-            settings.Converters.Add(new DecimalStringConverter());
-            settings.Converters.Add(new NullableDecimalStringConverter());
-            settings.Converters.Add(new TimeSpanIso8601Converter());
-            settings.Converters.Add(new NullableTimeSpanIso8601Converter());
-            settings.Converters.Add(new BinaryBase64UrlConverter());
-            settings.Converters.Add(new BinaryHexConverter());
-            return settings;
+            public System.Collections.Generic.ICollection<string> stringArray { get; set; }
+            public System.Collections.Generic.HashSet<int>? numberSet { get; set; }
+            public System.Collections.Generic.IDictionary<string, double>? stringToNumberMap { get; set; }
+            public System.Collections.Generic.ICollection<System.Collections.Generic.ICollection<string>>? nestedArray { get; set; }
         }
-    }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
-    {
-        public override long ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt64StringConverter : global::Newtonsoft.Json.JsonConverter<long?>
-    {
-        public override long? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong>
-    {
-        public override ulong ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong?>
-    {
-        public override ulong? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class Int128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128>
-    {
-        public override global::System.Int128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128?>
-    {
-        public override global::System.Int128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128>
-    {
-        public override global::System.UInt128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128?>
-    {
-        public override global::System.UInt128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class DecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal>
-    {
-        public override decimal ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableDecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal?>
-    {
-        public override decimal? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan>
-    {
-        public override global::System.TimeSpan ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Xml.XmlConvert.ToString(value));
-    }
-    public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan?>
-    {
-        public override global::System.TimeSpan? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan? value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
-    }
-    public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> where T : struct
-    {
-        private readonly global::System.Reflection.ConstructorInfo _constructor;
-        private readonly global::System.Reflection.PropertyInfo[] _properties;
-        public TupleJsonConverter()
-        {
-            _constructor = global::System.Linq.Enumerable.First(typeof(T).GetConstructors());
-            _properties = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(
-                _constructor.GetParameters(), parameter => typeof(T).GetProperty(parameter.Name!,
-                    global::System.Reflection.BindingFlags.Public | global::System.Reflection.BindingFlags.Instance |
-                    global::System.Reflection.BindingFlags.IgnoreCase)
-                ?? throw new global::System.InvalidOperationException("Property not found for tuple element '" + parameter.Name + "'.")));
-        }
-        public override T ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, T existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var values = serializer.Deserialize<global::Newtonsoft.Json.Linq.JArray>(reader);
-            if (values == null || values.Count != _properties.Length) throw new global::Newtonsoft.Json.JsonSerializationException("Wrong number of tuple elements.");
-            var arguments = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(_properties,
-                (property, index) => values[index].ToObject(property.PropertyType, serializer)));
-            return (T)_constructor.Invoke(arguments);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, T value, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            writer.WriteStartArray();
-            foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
-            writer.WriteEndArray();
-        }
-    }
-
-    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var value = (string)reader.Value ?? string.Empty;
-            value = value.Replace('-', '+').Replace('_', '/');
-            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
-            return global::System.Convert.FromBase64String(value);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
-    }
-    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var text = (string)reader.Value ?? string.Empty;
-            var bytes = new byte[text.Length / 2];
-            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
-            return bytes;
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 
@@ -558,47 +165,30 @@ namespace Corpus.Generated
 
     
 
-    public partial class NumericTypes
+    namespace NumericTypes
     {
-        public sbyte int8Field { get; set; }
-        public short? int16Field { get; set; }
-        public uint? uint32Field { get; set; }
-        public ulong? uint64Field { get; set; }
-        public decimal decimalField { get; set; }
-        public float? float32Field { get; set; }
-        public double? float64Field { get; set; }
+        public partial class NumericTypes
+        {
+            public sbyte int8Field { get; set; }
+            public short? int16Field { get; set; }
+            public uint? uint32Field { get; set; }
+            public ulong? uint64Field { get; set; }
+            public decimal decimalField { get; set; }
+            public float? float32Field { get; set; }
+            public double? float64Field { get; set; }
+        }
     }
 
     public static class JsonStructureConverters
     {
         public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
         {
-            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();
-            settings.Converters.Add(new Int64StringConverter());
-            settings.Converters.Add(new NullableInt64StringConverter());
-            settings.Converters.Add(new UInt64StringConverter());
+            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();        settings.Converters.Add(new UInt64StringConverter());
             settings.Converters.Add(new NullableUInt64StringConverter());
-            settings.Converters.Add(new Int128StringConverter());
-            settings.Converters.Add(new NullableInt128StringConverter());
-            settings.Converters.Add(new UInt128StringConverter());
-            settings.Converters.Add(new NullableUInt128StringConverter());
             settings.Converters.Add(new DecimalStringConverter());
             settings.Converters.Add(new NullableDecimalStringConverter());
-            settings.Converters.Add(new TimeSpanIso8601Converter());
-            settings.Converters.Add(new NullableTimeSpanIso8601Converter());
-            settings.Converters.Add(new BinaryBase64UrlConverter());
-            settings.Converters.Add(new BinaryHexConverter());
             return settings;
         }
-    }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
-    {
-        public override long ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt64StringConverter : global::Newtonsoft.Json.JsonConverter<long?>
-    {
-        public override long? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
     }
     public sealed class UInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong>
     {
@@ -610,26 +200,6 @@ namespace Corpus.Generated
         public override ulong? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
         public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
     }
-    public sealed class Int128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128>
-    {
-        public override global::System.Int128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128?>
-    {
-        public override global::System.Int128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128>
-    {
-        public override global::System.UInt128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128?>
-    {
-        public override global::System.UInt128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
     public sealed class DecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal>
     {
         public override decimal ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
@@ -639,73 +209,6 @@ namespace Corpus.Generated
     {
         public override decimal? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
         public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan>
-    {
-        public override global::System.TimeSpan ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Xml.XmlConvert.ToString(value));
-    }
-    public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan?>
-    {
-        public override global::System.TimeSpan? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan? value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
-    }
-    public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> where T : struct
-    {
-        private readonly global::System.Reflection.ConstructorInfo _constructor;
-        private readonly global::System.Reflection.PropertyInfo[] _properties;
-        public TupleJsonConverter()
-        {
-            _constructor = global::System.Linq.Enumerable.First(typeof(T).GetConstructors());
-            _properties = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(
-                _constructor.GetParameters(), parameter => typeof(T).GetProperty(parameter.Name!,
-                    global::System.Reflection.BindingFlags.Public | global::System.Reflection.BindingFlags.Instance |
-                    global::System.Reflection.BindingFlags.IgnoreCase)
-                ?? throw new global::System.InvalidOperationException("Property not found for tuple element '" + parameter.Name + "'.")));
-        }
-        public override T ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, T existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var values = serializer.Deserialize<global::Newtonsoft.Json.Linq.JArray>(reader);
-            if (values == null || values.Count != _properties.Length) throw new global::Newtonsoft.Json.JsonSerializationException("Wrong number of tuple elements.");
-            var arguments = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(_properties,
-                (property, index) => values[index].ToObject(property.PropertyType, serializer)));
-            return (T)_constructor.Invoke(arguments);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, T value, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            writer.WriteStartArray();
-            foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
-            writer.WriteEndArray();
-        }
-    }
-
-    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var value = (string)reader.Value ?? string.Empty;
-            value = value.Replace('-', '+').Replace('_', '/');
-            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
-            return global::System.Convert.FromBase64String(value);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
-    }
-    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var text = (string)reader.Value ?? string.Empty;
-            var bytes = new byte[text.Length / 2];
-            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
-            return bytes;
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 
@@ -723,155 +226,19 @@ namespace Corpus.Generated
 
     
 
-    [global::System.Obsolete]
-    public partial class AdvancedFeatures
+    namespace AdvancedFeatures
     {
-        public string constField { get; set; } = "FIXED_VALUE";
         [global::System.Obsolete]
-        public int? deprecatedField { get; set; }
-        public string? readOnlyField { get; }
-        public string? writeOnlyField { set; }
-        [global::System.ComponentModel.DataAnnotations.MaxLength(50)]
-        public string? validatedString { get; set; }
-    }
-
-    public static class JsonStructureConverters
-    {
-        public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
+        public partial class AdvancedFeatures
         {
-            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();
-            settings.Converters.Add(new Int64StringConverter());
-            settings.Converters.Add(new NullableInt64StringConverter());
-            settings.Converters.Add(new UInt64StringConverter());
-            settings.Converters.Add(new NullableUInt64StringConverter());
-            settings.Converters.Add(new Int128StringConverter());
-            settings.Converters.Add(new NullableInt128StringConverter());
-            settings.Converters.Add(new UInt128StringConverter());
-            settings.Converters.Add(new NullableUInt128StringConverter());
-            settings.Converters.Add(new DecimalStringConverter());
-            settings.Converters.Add(new NullableDecimalStringConverter());
-            settings.Converters.Add(new TimeSpanIso8601Converter());
-            settings.Converters.Add(new NullableTimeSpanIso8601Converter());
-            settings.Converters.Add(new BinaryBase64UrlConverter());
-            settings.Converters.Add(new BinaryHexConverter());
-            return settings;
+            public string constField { get; set; } = "FIXED_VALUE";
+            [global::System.Obsolete]
+            public int? deprecatedField { get; set; }
+            public string? readOnlyField { get; }
+            public string? writeOnlyField { set; }
+            [global::System.ComponentModel.DataAnnotations.MaxLength(50)]
+            public string? validatedString { get; set; }
         }
-    }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
-    {
-        public override long ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt64StringConverter : global::Newtonsoft.Json.JsonConverter<long?>
-    {
-        public override long? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong>
-    {
-        public override ulong ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong?>
-    {
-        public override ulong? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class Int128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128>
-    {
-        public override global::System.Int128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128?>
-    {
-        public override global::System.Int128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128>
-    {
-        public override global::System.UInt128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128?>
-    {
-        public override global::System.UInt128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class DecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal>
-    {
-        public override decimal ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableDecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal?>
-    {
-        public override decimal? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan>
-    {
-        public override global::System.TimeSpan ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Xml.XmlConvert.ToString(value));
-    }
-    public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan?>
-    {
-        public override global::System.TimeSpan? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan? value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
-    }
-    public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> where T : struct
-    {
-        private readonly global::System.Reflection.ConstructorInfo _constructor;
-        private readonly global::System.Reflection.PropertyInfo[] _properties;
-        public TupleJsonConverter()
-        {
-            _constructor = global::System.Linq.Enumerable.First(typeof(T).GetConstructors());
-            _properties = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(
-                _constructor.GetParameters(), parameter => typeof(T).GetProperty(parameter.Name!,
-                    global::System.Reflection.BindingFlags.Public | global::System.Reflection.BindingFlags.Instance |
-                    global::System.Reflection.BindingFlags.IgnoreCase)
-                ?? throw new global::System.InvalidOperationException("Property not found for tuple element '" + parameter.Name + "'.")));
-        }
-        public override T ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, T existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var values = serializer.Deserialize<global::Newtonsoft.Json.Linq.JArray>(reader);
-            if (values == null || values.Count != _properties.Length) throw new global::Newtonsoft.Json.JsonSerializationException("Wrong number of tuple elements.");
-            var arguments = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(_properties,
-                (property, index) => values[index].ToObject(property.PropertyType, serializer)));
-            return (T)_constructor.Invoke(arguments);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, T value, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            writer.WriteStartArray();
-            foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
-            writer.WriteEndArray();
-        }
-    }
-
-    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var value = (string)reader.Value ?? string.Empty;
-            value = value.Replace('-', '+').Replace('_', '/');
-            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
-            return global::System.Convert.FromBase64String(value);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
-    }
-    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var text = (string)reader.Value ?? string.Empty;
-            var bytes = new byte[text.Length / 2];
-            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
-            return bytes;
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 
@@ -889,153 +256,17 @@ namespace Corpus.Generated
 
     
 
-    public partial class ValidationConstraints
+    namespace ValidationConstraints
     {
-        [global::System.ComponentModel.DataAnnotations.MaxLength(50)]
-        public string constrainedString { get; set; }
-        public string enumField { get; set; }
-        public string? constField { get; set; } = "fixed-value";
-        public int? numberWithConstraints { get; set; }
-        public double? exclusiveRangeNumber { get; set; }
-    }
-
-    public static class JsonStructureConverters
-    {
-        public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
+        public partial class ValidationConstraints
         {
-            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();
-            settings.Converters.Add(new Int64StringConverter());
-            settings.Converters.Add(new NullableInt64StringConverter());
-            settings.Converters.Add(new UInt64StringConverter());
-            settings.Converters.Add(new NullableUInt64StringConverter());
-            settings.Converters.Add(new Int128StringConverter());
-            settings.Converters.Add(new NullableInt128StringConverter());
-            settings.Converters.Add(new UInt128StringConverter());
-            settings.Converters.Add(new NullableUInt128StringConverter());
-            settings.Converters.Add(new DecimalStringConverter());
-            settings.Converters.Add(new NullableDecimalStringConverter());
-            settings.Converters.Add(new TimeSpanIso8601Converter());
-            settings.Converters.Add(new NullableTimeSpanIso8601Converter());
-            settings.Converters.Add(new BinaryBase64UrlConverter());
-            settings.Converters.Add(new BinaryHexConverter());
-            return settings;
+            [global::System.ComponentModel.DataAnnotations.MaxLength(50)]
+            public string constrainedString { get; set; }
+            public string enumField { get; set; }
+            public string? constField { get; set; } = "fixed-value";
+            public int? numberWithConstraints { get; set; }
+            public double? exclusiveRangeNumber { get; set; }
         }
-    }public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
-    {
-        public override long ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt64StringConverter : global::Newtonsoft.Json.JsonConverter<long?>
-    {
-        public override long? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong>
-    {
-        public override ulong ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong?>
-    {
-        public override ulong? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class Int128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128>
-    {
-        public override global::System.Int128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.Int128?>
-    {
-        public override global::System.Int128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.Int128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Int128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.Int128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class UInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128>
-    {
-        public override global::System.UInt128 ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128 existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128 value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableUInt128StringConverter : global::Newtonsoft.Json.JsonConverter<global::System.UInt128?>
-    {
-        public override global::System.UInt128? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.UInt128? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.UInt128.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.UInt128? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class DecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal>
-    {
-        public override decimal ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
-    }
-    public sealed class NullableDecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal?>
-    {
-        public override decimal? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
-    }
-    public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan>
-    {
-        public override global::System.TimeSpan ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Xml.XmlConvert.ToString(value));
-    }
-    public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan?>
-    {
-        public override global::System.TimeSpan? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-            => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : global::System.Xml.XmlConvert.ToTimeSpan((string)reader.Value);
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, global::System.TimeSpan? value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
-    }
-    public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> where T : struct
-    {
-        private readonly global::System.Reflection.ConstructorInfo _constructor;
-        private readonly global::System.Reflection.PropertyInfo[] _properties;
-        public TupleJsonConverter()
-        {
-            _constructor = global::System.Linq.Enumerable.First(typeof(T).GetConstructors());
-            _properties = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(
-                _constructor.GetParameters(), parameter => typeof(T).GetProperty(parameter.Name!,
-                    global::System.Reflection.BindingFlags.Public | global::System.Reflection.BindingFlags.Instance |
-                    global::System.Reflection.BindingFlags.IgnoreCase)
-                ?? throw new global::System.InvalidOperationException("Property not found for tuple element '" + parameter.Name + "'.")));
-        }
-        public override T ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, T existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var values = serializer.Deserialize<global::Newtonsoft.Json.Linq.JArray>(reader);
-            if (values == null || values.Count != _properties.Length) throw new global::Newtonsoft.Json.JsonSerializationException("Wrong number of tuple elements.");
-            var arguments = global::System.Linq.Enumerable.ToArray(global::System.Linq.Enumerable.Select(_properties,
-                (property, index) => values[index].ToObject(property.PropertyType, serializer)));
-            return (T)_constructor.Invoke(arguments);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, T value, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            writer.WriteStartArray();
-            foreach (var property in _properties) serializer.Serialize(writer, property.GetValue(value));
-            writer.WriteEndArray();
-        }
-    }
-
-    public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var value = (string)reader.Value ?? string.Empty;
-            value = value.Replace('-', '+').Replace('_', '/');
-            value = value.PadRight(value.Length + ((4 - value.Length % 4) % 4), '=');
-            return global::System.Convert.FromBase64String(value);
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
-    }
-    public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
-    {
-        public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
-        {
-            var text = (string)reader.Value ?? string.Empty;
-            var bytes = new byte[text.Length / 2];
-            for (var i = 0; i < bytes.Length; i++) bytes[i] = global::System.Convert.ToByte(text.Substring(i * 2, 2), 16);
-            return bytes;
-        }
-        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
-            => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
     }
 
 

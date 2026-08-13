@@ -44,16 +44,25 @@ namespace NSwag.CodeGeneration.CSharp
             return ResolveCore(kind);
         }
 
+        /// <summary>Resolves a named JSON Structure type using a target-language-qualified name.</summary>
+        public string Resolve(JsonStructureCodeGenerationNamedType type, JsonStructureCodeGenerationContext context)
+        {
+            var prefix = string.IsNullOrWhiteSpace(_settings.Namespace)
+                ? "global::"
+                : "global::" + _settings.Namespace + ".";
+            return prefix + context.GetName(type);
+        }
+
         private string ResolveCore(JsonStructureCodeGenerationTypeReference type, JsonStructureCodeGenerationContext context)
         {
             if (type.NamedType != null)
             {
-                return context.GetName(type.NamedType);
+                return Resolve(type.NamedType, context);
             }
 
             if (type.InlineType != null && JsonStructureTypeKinds.IsNameable(type.InlineType.Kind))
             {
-                return context.GetName(type.InlineType);
+                return Resolve(type.InlineType, context);
             }
 
             if (type.Union.Count > 1)
@@ -77,7 +86,7 @@ namespace NSwag.CodeGeneration.CSharp
             if (type.TupleElements.Count > 0)
             {
                 return type.InlineType != null
-                    ? context.GetName(type.InlineType)
+                    ? Resolve(type.InlineType, context)
                     : "System.ValueTuple<" + string.Join(", ", type.TupleElements.Select(t => Resolve(t, context))) + ">";
             }
 

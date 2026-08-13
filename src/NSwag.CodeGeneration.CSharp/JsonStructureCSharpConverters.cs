@@ -9,59 +9,195 @@ internal static class JsonStructureCSharpConverters
 {
     public static string Generate(CSharpGeneratorSettings settings, IEnumerable<JsonStructureCodeGenerationNamedType> types, JsonStructureCodeGenerationContext context)
     {
-        var code = settings.JsonLibrary == CSharpJsonLibrary.SystemTextJson
-            ? GenerateSystemTextJson()
-            : GenerateNewtonsoftJson();
-        foreach (var type in types.Where(t => t.IsInlineChoice))
+        var typeList = types.ToList();
+        var requirements = Analyze(typeList);
+        var code = new StringBuilder();
+        if (requirements.HasSerializerConverters)
         {
-            var name = context.GetLocalName(type);
-            var wrapper = type.BaseType == null ? "object" : context.GetName(type.BaseType);
+            code.Append(settings.JsonLibrary == CSharpJsonLibrary.SystemTextJson
+                ? GenerateSystemTextJson(requirements)
+                : GenerateNewtonsoftJson(requirements));
+        }
+
+        foreach (var type in typeList.Where(t => t.IsInlineChoice))
+        {
+            var name = context.GetName(type);
+            var converterName = GetConverterName(type, context);
+            var wrapper = type.BaseType == null ? "object" : new JsonStructureCSharpTypeResolver(settings).Resolve(type.BaseType, context);
             var variants = type.Choices
-                .Select(c => (Type: Resolve(c.Type, context), Property: (c.Type.NamedType ?? c.Type.InlineType) is { Properties.Count: > 0 } type ? type.Properties[0].Name : null))
+                .Select(c => (Type: Resolve(c.Type, context, settings), Property: (c.Type.NamedType ?? c.Type.InlineType) is { Properties.Count: > 0 } type ? type.Properties[0].Name : null))
                 .Where(c => c.Type != "object" && c.Property != null)
                 .ToList();
             if (settings.JsonLibrary == CSharpJsonLibrary.SystemTextJson)
             {
-                code += GenerateSystemTextJsonUnion(name, wrapper, variants);
+                code.Append(GenerateSystemTextJsonUnion(name, converterName, wrapper, variants));
             }
             else
             {
-                code += GenerateNewtonsoftJsonUnion(name, wrapper, variants);
+                code.Append(GenerateNewtonsoftJsonUnion(name, converterName, wrapper, variants));
             }
         }
-        foreach (var type in types.Where(t => t.Kind == JsonStructureTypeKind.Choice && !t.IsInlineChoice))
+        foreach (var type in typeList.Where(t => t.Kind == JsonStructureTypeKind.Choice && !t.IsInlineChoice))
         {
             var variants = type.Choices
-                .Select(c => (Type: Resolve(c.Type, context), Property: GetDiscriminatorProperty(c.Type),
+                .Select(c => (Type: Resolve(c.Type, context, settings), Property: GetDiscriminatorProperty(c.Type),
                     Value: c.Discriminator?.Type == Newtonsoft.Json.Linq.JTokenType.String
                         ? c.Discriminator.ToObject<string>() : c.Name))
                 .Where(c => c.Type != "object" && c.Property != null)
                 .ToList();
             if (settings.JsonLibrary == CSharpJsonLibrary.NewtonsoftJson && variants.Count > 0)
             {
-                code += GenerateNewtonsoftJsonPolymorphic(context.GetLocalName(type), variants);
+                code.Append(GenerateNewtonsoftJsonPolymorphic(
+                    context.GetName(type),
+                    GetConverterName(type, context),
+                    variants));
             }
         }
-        var gaps = FindUnsupportedGaps(types, settings);
+        var gaps = FindUnsupportedGaps(typeList, settings);
         if (gaps.Count > 0)
         {
-            code += "\n" + string.Join("\n", gaps.Select(gap => "#warning " + gap));
+            code.Append('\n').Append(string.Join("\n", gaps.Select(gap => "#warning " + gap)));
         }
-        return code;
+        return code.ToString();
     }
 
-    private static string Resolve(JsonStructureCodeGenerationTypeReference type, JsonStructureCodeGenerationContext context)
+    private sealed class ConverterRequirements
     {
-        if (type.NamedType != null) return context.GetName(type.NamedType);
+        public bool Int64 { get; set; }
+        public bool UInt64 { get; set; }
+        public bool Int128 { get; set; }
+        public bool UInt128 { get; set; }
+        public bool Decimal { get; set; }
+        public bool Duration { get; set; }
+        public bool Tuple { get; set; }
+        public bool BinaryBase64Url { get; set; }
+        public bool BinaryHex { get; set; }
+
+        public bool HasSerializerConverters =>
+            Int64 || UInt64 || Int128 || UInt128 || Decimal || Duration || Tuple || BinaryBase64Url || BinaryHex;
+    }
+
+    private static ConverterRequirements Analyze(IEnumerable<JsonStructureCodeGenerationNamedType> types)
+    {
+        var requirements = new ConverterRequirements();
+        var visited = new HashSet<JsonStructureCodeGenerationNamedType>();
+        foreach (var type in types)
+        {
+            Analyze(type, requirements, visited);
+        }
+
+        return requirements;
+    }
+
+    private static void Analyze(
+        JsonStructureCodeGenerationNamedType type,
+        ConverterRequirements requirements,
+        ISet<JsonStructureCodeGenerationNamedType> visited)
+    {
+        if (type == null || !visited.Add(type))
+        {
+            return;
+        }
+
+        requirements.Tuple |= type.Kind == JsonStructureTypeKind.Tuple;
+        AnalyzeAnnotations(type.Annotations, requirements);
+        foreach (var property in type.Properties)
+        {
+            Analyze(property.Type, requirements, visited);
+            AnalyzeAnnotations(property.Annotations, requirements);
+        }
+
+        foreach (var choice in type.Choices)
+        {
+            Analyze(choice.Type, requirements, visited);
+        }
+
+        Analyze(type.Items, requirements, visited);
+        Analyze(type.Values, requirements, visited);
+    }
+
+    private static void Analyze(
+        JsonStructureCodeGenerationTypeReference reference,
+        ConverterRequirements requirements,
+        ISet<JsonStructureCodeGenerationNamedType> visited)
+    {
+        if (reference == null)
+        {
+            return;
+        }
+
+        switch (reference.Kind)
+        {
+            case JsonStructureTypeKind.Int64:
+                requirements.Int64 = true;
+                break;
+            case JsonStructureTypeKind.UInt64:
+                requirements.UInt64 = true;
+                break;
+            case JsonStructureTypeKind.Int128:
+                requirements.Int128 = true;
+                break;
+            case JsonStructureTypeKind.UInt128:
+                requirements.UInt128 = true;
+                break;
+            case JsonStructureTypeKind.Decimal:
+                requirements.Decimal = true;
+                break;
+            case JsonStructureTypeKind.Duration:
+                requirements.Duration = true;
+                break;
+        }
+
+        AnalyzeAnnotations(reference.Annotations, requirements);
+        Analyze(reference.NamedType, requirements, visited);
+        Analyze(reference.InlineType, requirements, visited);
+        Analyze(reference.ElementType, requirements, visited);
+        Analyze(reference.ValueType, requirements, visited);
+        foreach (var element in reference.TupleElements.Concat(reference.Union))
+        {
+            Analyze(element, requirements, visited);
+        }
+    }
+
+    private static void AnalyzeAnnotations(
+        IReadOnlyDictionary<string, Newtonsoft.Json.Linq.JToken> annotations,
+        ConverterRequirements requirements)
+    {
+        if (annotations == null || !annotations.TryGetValue("contentEncoding", out var encoding) ||
+            encoding?.Type != Newtonsoft.Json.Linq.JTokenType.String)
+        {
+            return;
+        }
+
+        if (string.Equals(encoding.ToObject<string>(), "base64url", StringComparison.OrdinalIgnoreCase))
+        {
+            requirements.BinaryBase64Url = true;
+        }
+        else if (string.Equals(encoding.ToObject<string>(), "hex", StringComparison.OrdinalIgnoreCase))
+        {
+            requirements.BinaryHex = true;
+        }
+    }
+
+    private static string Resolve(
+        JsonStructureCodeGenerationTypeReference type,
+        JsonStructureCodeGenerationContext context,
+        CSharpGeneratorSettings settings)
+    {
+        if (type.NamedType != null) return new JsonStructureCSharpTypeResolver(settings).Resolve(type.NamedType, context);
         if (type.InlineType != null) return context.GetLocalName(type.InlineType);
         return "object";
     }
 
-    private static string GenerateSystemTextJsonUnion(string name, string wrapper, IReadOnlyList<(string Type, string Property)> variants)
+    private static string GenerateSystemTextJsonUnion(
+        string name,
+        string converterName,
+        string wrapper,
+        IReadOnlyList<(string Type, string Property)> variants)
     {
         var code = new StringBuilder($$"""
 
-public sealed class {{name}}JsonConverter : global::System.Text.Json.Serialization.JsonConverter<{{name}}>
+public sealed class {{converterName}} : global::System.Text.Json.Serialization.JsonConverter<{{name}}>
 {
     public override {{name}} Read(ref global::System.Text.Json.Utf8JsonReader reader, global::System.Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
     {
@@ -81,11 +217,15 @@ public sealed class {{name}}JsonConverter : global::System.Text.Json.Serializati
         return code.ToString();
     }
 
-    private static string GenerateNewtonsoftJsonUnion(string name, string wrapper, IReadOnlyList<(string Type, string Property)> variants)
+    private static string GenerateNewtonsoftJsonUnion(
+        string name,
+        string converterName,
+        string wrapper,
+        IReadOnlyList<(string Type, string Property)> variants)
     {
         var code = new StringBuilder($$"""
 
-public sealed class {{name}}JsonConverter : global::Newtonsoft.Json.JsonConverter<{{name}}>
+public sealed class {{converterName}} : global::Newtonsoft.Json.JsonConverter<{{name}}>
 {
     public override {{name}} ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, {{name}} existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
     {
@@ -105,12 +245,13 @@ public sealed class {{name}}JsonConverter : global::Newtonsoft.Json.JsonConverte
 
     private static string GenerateNewtonsoftJsonPolymorphic(
         string name,
+        string converterName,
         List<(string Type, string Property, string Value)> variants)
     {
         var discriminator = variants[0].Property;
         var code = new StringBuilder($$"""
 
-public sealed class {{name}}JsonConverter : global::Newtonsoft.Json.JsonConverter<{{name}}>
+public sealed class {{converterName}} : global::Newtonsoft.Json.JsonConverter<{{name}}>
 {
     public override {{name}} ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, {{name}} existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
     {
@@ -132,6 +273,15 @@ public sealed class {{name}}JsonConverter : global::Newtonsoft.Json.JsonConverte
 }
 """);
         return code.ToString();
+    }
+
+    internal static string GetConverterName(
+        JsonStructureCodeGenerationNamedType type,
+        JsonStructureCodeGenerationContext context)
+    {
+        return context.GetName(type)
+            .Replace(".", "_", StringComparison.Ordinal)
+            .Replace("@", string.Empty, StringComparison.Ordinal) + "JsonConverter";
     }
 
     private static string GetDiscriminatorProperty(JsonStructureCodeGenerationTypeReference type)
@@ -204,7 +354,7 @@ public sealed class {{name}}JsonConverter : global::Newtonsoft.Json.JsonConverte
 
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
-    private static string GenerateSystemTextJson()
+    private static string GenerateSystemTextJson(ConverterRequirements requirements)
     {
         var code = new StringBuilder("""
 public static class JsonStructureConverters
@@ -212,31 +362,25 @@ public static class JsonStructureConverters
     public static global::System.Text.Json.JsonSerializerOptions GetOptions()
     {
         var options = new global::System.Text.Json.JsonSerializerOptions();
-        options.Converters.Add(new Int64StringConverter());
-        options.Converters.Add(new NullableInt64StringConverter());
-        options.Converters.Add(new UInt64StringConverter());
-        options.Converters.Add(new NullableUInt64StringConverter());
-        options.Converters.Add(new Int128StringConverter());
-        options.Converters.Add(new NullableInt128StringConverter());
-        options.Converters.Add(new UInt128StringConverter());
-        options.Converters.Add(new NullableUInt128StringConverter());
-        options.Converters.Add(new DecimalStringConverter());
-        options.Converters.Add(new NullableDecimalStringConverter());
-        options.Converters.Add(new TimeSpanIso8601Converter());
-        options.Converters.Add(new NullableTimeSpanIso8601Converter());
-        options.Converters.Add(new BinaryBase64UrlConverter());
-        options.Converters.Add(new BinaryHexConverter());
-        return options;
-    }
-}
 """);
-        AppendSystemTextJsonConverter(code, "Int64", "long", "GetInt64");
-        AppendSystemTextJsonConverter(code, "UInt64", "ulong", "GetUInt64");
-        AppendSystemTextJsonConverter(code, "Int128", "global::System.Int128", null);
-        AppendSystemTextJsonConverter(code, "UInt128", "global::System.UInt128", null);
-        AppendSystemTextJsonConverter(code, "Decimal", "decimal", "GetDecimal");
-        code.AppendLine(GenerateSystemTextBinaryConverters());
-        code.AppendLine("""
+        if (requirements.Int64) code.AppendLine("        options.Converters.Add(new Int64StringConverter());").AppendLine("        options.Converters.Add(new NullableInt64StringConverter());");
+        if (requirements.UInt64) code.AppendLine("        options.Converters.Add(new UInt64StringConverter());").AppendLine("        options.Converters.Add(new NullableUInt64StringConverter());");
+        if (requirements.Int128) code.AppendLine("        options.Converters.Add(new Int128StringConverter());").AppendLine("        options.Converters.Add(new NullableInt128StringConverter());");
+        if (requirements.UInt128) code.AppendLine("        options.Converters.Add(new UInt128StringConverter());").AppendLine("        options.Converters.Add(new NullableUInt128StringConverter());");
+        if (requirements.Decimal) code.AppendLine("        options.Converters.Add(new DecimalStringConverter());").AppendLine("        options.Converters.Add(new NullableDecimalStringConverter());");
+        if (requirements.Duration) code.AppendLine("        options.Converters.Add(new TimeSpanIso8601Converter());").AppendLine("        options.Converters.Add(new NullableTimeSpanIso8601Converter());");
+        if (requirements.BinaryBase64Url) code.AppendLine("        options.Converters.Add(new BinaryBase64UrlConverter());");
+        if (requirements.BinaryHex) code.AppendLine("        options.Converters.Add(new BinaryHexConverter());");
+        code.AppendLine("        return options;");
+        code.AppendLine("    }");
+        code.AppendLine("}");
+        if (requirements.Int64) AppendSystemTextJsonConverter(code, "Int64", "long", "GetInt64");
+        if (requirements.UInt64) AppendSystemTextJsonConverter(code, "UInt64", "ulong", "GetUInt64");
+        if (requirements.Int128) AppendSystemTextJsonConverter(code, "Int128", "global::System.Int128", null);
+        if (requirements.UInt128) AppendSystemTextJsonConverter(code, "UInt128", "global::System.UInt128", null);
+        if (requirements.Decimal) AppendSystemTextJsonConverter(code, "Decimal", "decimal", "GetDecimal");
+        if (requirements.BinaryBase64Url || requirements.BinaryHex) code.AppendLine(GenerateSystemTextBinaryConverters(requirements));
+        if (requirements.Duration) code.AppendLine("""
 public sealed class TimeSpanIso8601Converter : global::System.Text.Json.Serialization.JsonConverter<global::System.TimeSpan>
 {
     public override global::System.TimeSpan Read(ref global::System.Text.Json.Utf8JsonReader reader, global::System.Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
@@ -250,7 +394,7 @@ public sealed class TimeSpanIso8601Converter : global::System.Text.Json.Serializ
         => writer.WriteStringValue(global::System.Xml.XmlConvert.ToString(value));
 }
 """);
-        code.AppendLine("""
+        if (requirements.Duration) code.AppendLine("""
 public sealed class NullableTimeSpanIso8601Converter : global::System.Text.Json.Serialization.JsonConverter<global::System.TimeSpan?>
 {
     public override global::System.TimeSpan? Read(ref global::System.Text.Json.Utf8JsonReader reader, global::System.Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
@@ -265,7 +409,7 @@ public sealed class NullableTimeSpanIso8601Converter : global::System.Text.Json.
         => writer.WriteStringValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
 }
 """);
-        code.AppendLine("""
+        if (requirements.Tuple) code.AppendLine("""
 public class TupleJsonConverter<T> : global::System.Text.Json.Serialization.JsonConverter<T> where T : struct
 {
     private readonly global::System.Reflection.PropertyInfo[] _properties;
@@ -324,7 +468,7 @@ public class TupleJsonConverter<T> : global::System.Text.Json.Serialization.Json
             .AppendLine("}");
     }
 
-    private static string GenerateNewtonsoftJson()
+    private static string GenerateNewtonsoftJson(ConverterRequirements requirements)
     {
         var code = new StringBuilder("""
 public static class JsonStructureConverters
@@ -332,25 +476,19 @@ public static class JsonStructureConverters
     public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
     {
         var settings = new global::Newtonsoft.Json.JsonSerializerSettings();
-        settings.Converters.Add(new Int64StringConverter());
-        settings.Converters.Add(new NullableInt64StringConverter());
-        settings.Converters.Add(new UInt64StringConverter());
-        settings.Converters.Add(new NullableUInt64StringConverter());
-        settings.Converters.Add(new Int128StringConverter());
-        settings.Converters.Add(new NullableInt128StringConverter());
-        settings.Converters.Add(new UInt128StringConverter());
-        settings.Converters.Add(new NullableUInt128StringConverter());
-        settings.Converters.Add(new DecimalStringConverter());
-        settings.Converters.Add(new NullableDecimalStringConverter());
-        settings.Converters.Add(new TimeSpanIso8601Converter());
-        settings.Converters.Add(new NullableTimeSpanIso8601Converter());
-        settings.Converters.Add(new BinaryBase64UrlConverter());
-        settings.Converters.Add(new BinaryHexConverter());
-        return settings;
-    }
-}
 """);
-        foreach (var item in new[] { ("Int64", "long"), ("UInt64", "ulong"), ("Int128", "global::System.Int128"), ("UInt128", "global::System.UInt128"), ("Decimal", "decimal") })
+        if (requirements.Int64) code.AppendLine("        settings.Converters.Add(new Int64StringConverter());").AppendLine("        settings.Converters.Add(new NullableInt64StringConverter());");
+        if (requirements.UInt64) code.AppendLine("        settings.Converters.Add(new UInt64StringConverter());").AppendLine("        settings.Converters.Add(new NullableUInt64StringConverter());");
+        if (requirements.Int128) code.AppendLine("        settings.Converters.Add(new Int128StringConverter());").AppendLine("        settings.Converters.Add(new NullableInt128StringConverter());");
+        if (requirements.UInt128) code.AppendLine("        settings.Converters.Add(new UInt128StringConverter());").AppendLine("        settings.Converters.Add(new NullableUInt128StringConverter());");
+        if (requirements.Decimal) code.AppendLine("        settings.Converters.Add(new DecimalStringConverter());").AppendLine("        settings.Converters.Add(new NullableDecimalStringConverter());");
+        if (requirements.Duration) code.AppendLine("        settings.Converters.Add(new TimeSpanIso8601Converter());").AppendLine("        settings.Converters.Add(new NullableTimeSpanIso8601Converter());");
+        if (requirements.BinaryBase64Url) code.AppendLine("        settings.Converters.Add(new BinaryBase64UrlConverter());");
+        if (requirements.BinaryHex) code.AppendLine("        settings.Converters.Add(new BinaryHexConverter());");
+        code.AppendLine("        return settings;");
+        code.AppendLine("    }");
+        code.AppendLine("}");
+        foreach (var item in new[] { ("Int64", "long", requirements.Int64), ("UInt64", "ulong", requirements.UInt64), ("Int128", "global::System.Int128", requirements.Int128), ("UInt128", "global::System.UInt128", requirements.UInt128), ("Decimal", "decimal", requirements.Decimal) }.Where(item => item.Item3))
         {
             code.AppendLine(string.Concat("public sealed class ", item.Item1, "StringConverter : global::Newtonsoft.Json.JsonConverter<", item.Item2, ">"))
                 .AppendLine("{")
@@ -364,7 +502,7 @@ public static class JsonStructureConverters
                 .AppendLine("}");
         }
 
-        code.AppendLine("""
+        if (requirements.Duration) code.AppendLine("""
 public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan>
 {
     public override global::System.TimeSpan ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
@@ -373,7 +511,7 @@ public sealed class TimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConve
         => writer.WriteValue(global::System.Xml.XmlConvert.ToString(value));
 }
 """);
-        code.AppendLine("""
+        if (requirements.Duration) code.AppendLine("""
 public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.JsonConverter<global::System.TimeSpan?>
 {
     public override global::System.TimeSpan? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, global::System.TimeSpan? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
@@ -382,7 +520,7 @@ public sealed class NullableTimeSpanIso8601Converter : global::Newtonsoft.Json.J
         => writer.WriteValue(value.HasValue ? global::System.Xml.XmlConvert.ToString(value.Value) : null);
 }
 """);
-        code.AppendLine("""
+        if (requirements.Tuple) code.AppendLine("""
 public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> where T : struct
 {
     private readonly global::System.Reflection.ConstructorInfo _constructor;
@@ -412,13 +550,17 @@ public class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T> wh
     }
 }
 """);
-        code.AppendLine(GenerateNewtonsoftBinaryConverters());
+        if (requirements.BinaryBase64Url || requirements.BinaryHex)
+        {
+            code.AppendLine(GenerateNewtonsoftBinaryConverters(requirements));
+        }
         return code.ToString();
     }
 
-    private static string GenerateSystemTextBinaryConverters()
+    private static string GenerateSystemTextBinaryConverters(ConverterRequirements requirements)
     {
-        return """
+        var code = new StringBuilder();
+        if (requirements.BinaryBase64Url) code.AppendLine("""
 
 public sealed class BinaryBase64UrlConverter : global::System.Text.Json.Serialization.JsonConverter<byte[]>
 {
@@ -432,6 +574,8 @@ public sealed class BinaryBase64UrlConverter : global::System.Text.Json.Serializ
     public override void Write(global::System.Text.Json.Utf8JsonWriter writer, byte[] value, global::System.Text.Json.JsonSerializerOptions options)
         => writer.WriteStringValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
 }
+""");
+        if (requirements.BinaryHex) code.AppendLine("""
 public sealed class BinaryHexConverter : global::System.Text.Json.Serialization.JsonConverter<byte[]>
 {
     public override byte[] Read(ref global::System.Text.Json.Utf8JsonReader reader, global::System.Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
@@ -444,12 +588,14 @@ public sealed class BinaryHexConverter : global::System.Text.Json.Serialization.
     public override void Write(global::System.Text.Json.Utf8JsonWriter writer, byte[] value, global::System.Text.Json.JsonSerializerOptions options)
         => writer.WriteStringValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
 }
-""";
+""");
+        return code.ToString();
     }
 
-    private static string GenerateNewtonsoftBinaryConverters()
+    private static string GenerateNewtonsoftBinaryConverters(ConverterRequirements requirements)
     {
-        return """
+        var code = new StringBuilder();
+        if (requirements.BinaryBase64Url) code.AppendLine("""
 
 public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
 {
@@ -463,6 +609,8 @@ public sealed class BinaryBase64UrlConverter : global::Newtonsoft.Json.JsonConve
     public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
         => writer.WriteValue(global::System.Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_'));
 }
+""");
+        if (requirements.BinaryHex) code.AppendLine("""
 public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<byte[]>
 {
     public override byte[] ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, byte[] existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
@@ -475,6 +623,7 @@ public sealed class BinaryHexConverter : global::Newtonsoft.Json.JsonConverter<b
     public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, byte[] value, global::Newtonsoft.Json.JsonSerializer serializer)
         => writer.WriteValue(global::System.BitConverter.ToString(value).Replace("-", string.Empty).ToLowerInvariant());
 }
-""";
+""");
+        return code.ToString();
     }
 }

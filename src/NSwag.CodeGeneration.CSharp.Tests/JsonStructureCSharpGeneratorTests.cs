@@ -10,6 +10,28 @@ namespace NSwag.CodeGeneration.CSharp.Tests;
 public class JsonStructureCSharpGeneratorTests
 {
     [Fact]
+    public void Aggregated_resources_keep_local_pet_types_and_qualified_roots()
+    {
+        var document = CreateAggregateNamespaceDocument();
+        var settings = new CSharpClientGeneratorSettings();
+        settings.CSharpGeneratorSettings.Namespace = "Aggregate.Generated";
+        settings.CSharpGeneratorSettings.GenerateNullableReferenceTypes = true;
+        var generator = new CSharpClientGenerator(document, settings);
+
+        var code = generator.GenerateFile();
+
+        Assert.Equal("global::Aggregate.Generated.Pet.Pet",
+            generator.GetTypeName(document.Definitions["Pet"], false, null));
+        Assert.Equal("global::Aggregate.Generated.PetListResponse.PetListResponse",
+            generator.GetTypeName(document.Definitions["PetListResponse"], false, null));
+        Assert.Contains("namespace Pet", code);
+        Assert.Contains("namespace PetListResponse", code);
+        Assert.Contains("global::Aggregate.Generated.PetListResponse.Pet", code);
+        Assert.DoesNotContain("Pet_2", code);
+        CSharpCompiler.AssertCompile(code);
+    }
+
+    [Fact]
     public async Task Generates_and_compiles_representative_corpus()
     {
         var outputs = new List<string>();
@@ -113,7 +135,8 @@ public class JsonStructureCSharpGeneratorTests
         var code = new CSharpClientGenerator(document, settings).GenerateFile();
 
         Assert.Contains("public abstract partial class Base", code);
-        Assert.Contains("public partial class Child : Base", code);
+        Assert.Contains("public partial class Child : global::", code);
+        Assert.Contains(".Root.Base", code);
         Assert.Contains("public required System.Guid id", code);
         Assert.Contains("public string? optional", code);
         Assert.Contains("public required int count", code);
@@ -237,6 +260,32 @@ public class JsonStructureCSharpGeneratorTests
     }
 
     [Fact]
+    public void Does_not_emit_json_structure_converters_when_not_required()
+    {
+        var structure = new JsonStructureParser().Parse("""
+            {
+              "$schema": "https://json-structure.org/meta/core/v0/#",
+              "$id": "https://example.com/plain",
+              "name": "Plain",
+              "type": "object",
+              "properties": {
+                "value": { "type": "string" }
+              }
+            }
+            """);
+        JsonStructureResolver.Resolve(structure);
+        var document = new OpenApiDocument();
+        document.AttachJsonStructureDocumentModel(new JsonStructureDocumentModel(
+            [new KeyValuePair<string, JsonStructureDocument>("#/components/schemas/Plain", structure)]));
+
+        var code = new CSharpClientGenerator(document, new CSharpClientGeneratorSettings()).GenerateFile();
+
+        Assert.DoesNotContain("JsonStructureConverters", code);
+        Assert.DoesNotContain("StringConverter", code);
+        Assert.Contains("public string value { get; set; }", code);
+    }
+
+    [Fact]
     public void Generates_Newtonsoft_converters_polymorphism_and_alternate_property_names()
     {
         var structure = new JsonStructureParser().Parse("""
@@ -290,7 +339,7 @@ public class JsonStructureCSharpGeneratorTests
         Assert.Contains("class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>", code);
         Assert.Contains("[global::Newtonsoft.Json.JsonProperty(\"wire_name\")]", code);
         Assert.Contains("class TupleJsonConverter<T> : global::Newtonsoft.Json.JsonConverter<T>", code);
-        Assert.Contains("class ChoiceJsonConverter : global::Newtonsoft.Json.JsonConverter<Choice>", code);
+        Assert.Contains("class Contracts_ChoiceJsonConverter : global::Newtonsoft.Json.JsonConverter<Contracts.Choice>", code);
         Assert.DoesNotContain("JsonPolymorphic", code);
     }
 
@@ -321,4 +370,55 @@ public class JsonStructureCSharpGeneratorTests
         Assert.Contains("Use object variants with a const discriminator", code);
     }
 
+    private static OpenApiDocument CreateAggregateNamespaceDocument()
+    {
+        var pet = new JsonStructureParser().Parse("""
+            {
+              "name": "Pet",
+              "type": "object",
+              "properties": { "name": { "type": "string" } }
+            }
+            """);
+        var response = new JsonStructureParser().Parse("""
+            {
+              "name": "PetListResponse",
+              "type": "object",
+              "properties": {
+                "pets": {
+                  "type": "array",
+                  "items": { "type": { "$ref": "#/definitions/Pet" } }
+                }
+              },
+              "definitions": {
+                "Pet": {
+                  "type": "object",
+                  "properties": {
+                    "tags": { "type": "set", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+            """);
+        var document = new OpenApiDocument();
+        document.Definitions["Pet"] = CreatePlaceholder("#/components/schemas/Pet");
+        document.Definitions["PetListResponse"] = CreatePlaceholder("#/components/schemas/PetListResponse");
+        document.AttachJsonStructureDocumentModel(new JsonStructureDocumentModel(
+        [
+            new KeyValuePair<string, JsonStructureDocument>("#/components/schemas/Pet", pet),
+            new KeyValuePair<string, JsonStructureDocument>("#/components/schemas/PetListResponse", response)
+        ]));
+        return document;
+    }
+
+    private static NJsonSchema.JsonSchema CreatePlaceholder(string correlationKey)
+    {
+        return new NJsonSchema.JsonSchema
+        {
+            ExtensionData = new Dictionary<string, object>
+            {
+                [JsonStructureDocumentPreprocessor.ExtensionName] = true,
+                [JsonStructureDocumentPreprocessor.CorrelationKeyExtensionName] = correlationKey
+            }
+        };
+    }
 }

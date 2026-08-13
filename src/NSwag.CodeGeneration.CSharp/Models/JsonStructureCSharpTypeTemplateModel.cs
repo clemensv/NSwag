@@ -36,7 +36,7 @@ internal sealed class JsonStructureCSharpTypeTemplateModel
                 : "[global::Newtonsoft.Json.JsonConverter(typeof(TupleJsonConverter<" + Name + ">))]"
             : null;
         IsAbstract = type.IsAbstract;
-        BaseType = type.BaseType == null ? null : context.GetName(type.BaseType);
+        BaseType = type.BaseType == null ? null : resolver.Resolve(type.BaseType, context);
         Attributes = settings.GenerateDataAnnotations
             ? JsonStructureCSharpPropertyTemplateModel.BuildAttributes(type.Annotations, settings, type.Description)
             : [];
@@ -45,15 +45,15 @@ internal sealed class JsonStructureCSharpTypeTemplateModel
         var usedPropertyNames = new HashSet<string>(StringComparer.Ordinal);
         Properties = properties.Select(property => new JsonStructureCSharpPropertyTemplateModel(
             property, context, resolver, settings, Name, usedPropertyNames, Selector)).ToList();
-        WrapperType = type.BaseType == null ? "object" : context.GetName(type.BaseType);
+        WrapperType = type.BaseType == null ? "object" : resolver.Resolve(type.BaseType, context);
         ChoiceConverterAttribute = IsInlineChoice && type.Choices.Any(choice =>
                 (choice.Type.NamedType ?? choice.Type.InlineType)?.Properties.Count > 0)
             ? settings.JsonLibrary == CSharpJsonLibrary.SystemTextJson
-                ? "[global::System.Text.Json.Serialization.JsonConverter(typeof(" + Name + "JsonConverter))]"
-                : "[global::Newtonsoft.Json.JsonConverter(typeof(" + Name + "JsonConverter))]"
+                ? "[global::System.Text.Json.Serialization.JsonConverter(typeof(" + JsonStructureCSharpConverters.GetConverterName(type, context) + "))]"
+                : "[global::Newtonsoft.Json.JsonConverter(typeof(" + JsonStructureCSharpConverters.GetConverterName(type, context) + "))]"
             : null;
         ChoiceConverterAttribute = IsChoice && !IsInlineChoice && settings.JsonLibrary == CSharpJsonLibrary.NewtonsoftJson
-            ? "[global::Newtonsoft.Json.JsonConverter(typeof(" + Name + "JsonConverter))]"
+            ? "[global::Newtonsoft.Json.JsonConverter(typeof(" + JsonStructureCSharpConverters.GetConverterName(type, context) + "))]"
             : ChoiceConverterAttribute;
     }
 

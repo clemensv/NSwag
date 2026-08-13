@@ -22,12 +22,16 @@ namespace NSwag.CodeGeneration.CSharp
             var resolver = new JsonStructureCSharpTypeResolver(settings);
             var types = context.Models.SelectMany(entry => entry.Types)
                 .SelectMany(type => CollectTypes(type, new HashSet<JsonStructureCodeGenerationNamedType>()))
+                .Distinct()
                 .ToList();
             foreach (var type in types)
             {
                 var model = new JsonStructureCSharpTypeTemplateModel(type, context, resolver, settings);
                 var template = settings.TemplateFactory.CreateTemplate("CSharp", "JsonStructure.Class", model);
-                var code = template.Render();
+                var code = template.Render().Replace(
+                    "[System.CodeDom.Compiler.GeneratedCode(\"NJsonSchema\",",
+                    "[System.CodeDom.Compiler.GeneratedCode(\"NSwag.JsonStructure\",",
+                    StringComparison.Ordinal);
                 var namespacePath = context.GetNamespacePath(type);
                 for (var index = namespacePath.Count - 1; index >= 0; index--)
                 {
@@ -39,12 +43,21 @@ namespace NSwag.CodeGeneration.CSharp
                     CodeArtifactLanguage.CSharp, CodeArtifactCategory.Contract, code);
             }
 
-            yield return new CodeArtifact("JsonStructureConverters", CodeArtifactType.Class,
-                CodeArtifactLanguage.CSharp, CodeArtifactCategory.Contract, JsonStructureCSharpConverters.Generate(settings, types, context));
+            var converterCode = JsonStructureCSharpConverters.Generate(settings, types, context);
+            if (!string.IsNullOrWhiteSpace(converterCode))
+            {
+                yield return new CodeArtifact("JsonStructureConverters", CodeArtifactType.Class,
+                    CodeArtifactLanguage.CSharp, CodeArtifactCategory.Contract, converterCode);
+            }
         }
 
         private static IEnumerable<JsonStructureCodeGenerationNamedType> CollectTypes(JsonStructureCodeGenerationNamedType type, ISet<JsonStructureCodeGenerationNamedType> seen)
         {
+            if (type == null || string.IsNullOrWhiteSpace(type.Name))
+            {
+                yield break;
+            }
+
             if (!seen.Add(type))
             {
                 yield break;

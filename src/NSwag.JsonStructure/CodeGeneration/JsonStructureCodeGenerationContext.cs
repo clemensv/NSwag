@@ -4,6 +4,7 @@ using NJsonSchema;
 using NSwag;
 using NSwag.JsonStructure.OpenApi;
 using NSwag.JsonStructure.Model;
+using NSwag.JsonStructure.Resolution;
 
 namespace NSwag.JsonStructure.CodeGeneration
 {
@@ -15,27 +16,61 @@ namespace NSwag.JsonStructure.CodeGeneration
         private readonly Dictionary<JsonStructureCodeGenerationNamedType, string> _localNames = new();
         private readonly Dictionary<string, string> _namespaceNames = new(StringComparer.Ordinal);
         private readonly Dictionary<string, string> _rootNames = new(StringComparer.Ordinal);
+        private readonly Dictionary<JsonStructureCodeGenerationNamedType, JsonStructureCodeGenerationModel> _typeModels = new();
+        private readonly Dictionary<JsonStructureCodeGenerationModel, IReadOnlyList<JsonStructureCodeGenerationNamedType>> _ownedTypes = new();
+        private readonly IReadOnlyList<string> _reservedNames;
 
         public JsonStructureCodeGenerationContext(OpenApiDocument document, IEnumerable<string> reservedNames)
         {
             Document = document ?? throw new ArgumentNullException(nameof(document));
+            _reservedNames = (reservedNames ?? Enumerable.Empty<string>()).ToList();
             var sideTable = document.GetJsonStructureDocumentModel();
             if (sideTable == null)
             {
                 return;
             }
 
+            var scopeNames = new HashSet<string>(StringComparer.Ordinal);
             foreach (var pair in sideTable.LiftedSchemas)
             {
+                JsonStructureResolver.Resolve(pair.Value);
                 var model = JsonStructureCodeGenerationModel.Create(pair.Value);
+                if (string.IsNullOrWhiteSpace(model.ScopeName))
+                {
+                    throw new JsonStructureException(
+                        "The JSON Structure schema resource at '" + pair.Key +
+                        "' must declare a root 'name' before it can be aggregated.");
+                }
+                if (!scopeNames.Add(model.ScopeName))
+                {
+                    throw new JsonStructureException(
+                        "The JSON Structure schema resource name '" + model.ScopeName +
+                        "' is duplicated. Resource names must be unique when an OpenAPI document is aggregated.");
+                }
+
                 _models[pair.Value] = model;
+                var ownedTypes = GetOwnedTypes(model).ToList();
+                _ownedTypes[model] = ownedTypes;
+                foreach (var type in ownedTypes)
+                {
+                    _typeModels[type] = model;
+                }
             }
 
             var usedByNamespace = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+            var rootUsed = GetUsed(usedByNamespace, string.Empty);
+            foreach (var reservedName in _reservedNames)
+            {
+                rootUsed.Add(Sanitize(reservedName));
+            }
+
             foreach (var model in _models.Values)
             {
-                foreach (var path in model.Namespaces.Select(namespaceModel => namespaceModel.Path)
-                    .Where(path => path.Count > 0))
+                var paths = new[] { (IReadOnlyList<string>)new[] { model.ScopeName } }
+                    .Concat(model.Namespaces.Select(namespaceModel =>
+                        (IReadOnlyList<string>)new[] { model.ScopeName }.Concat(namespaceModel.Path).ToList()))
+                    .Where(path => path.Count > 0);
+                foreach (var path in paths)
                 {
                     var parent = string.Join("\u001f", path.Take(path.Count - 1));
                     var key = string.Join("\u001f", path);
@@ -47,40 +82,23 @@ namespace NSwag.JsonStructure.CodeGeneration
                 }
             }
 
-            var rootUsed = GetUsed(usedByNamespace, string.Empty);
-            foreach (var reservedName in reservedNames ?? Enumerable.Empty<string>())
-            {
-                rootUsed.Add(Sanitize(reservedName));
-            }
-
             foreach (var model in _models.Values)
             {
-                foreach (var type in model.Types)
+                foreach (var type in _ownedTypes[model])
                 {
-                    var namespaceKey = string.Join("\u001f", type.NamespacePath);
+                    var scopedPath = model.GetScopedNamespacePath(type);
+                    var namespaceKey = string.Join("\u001f", scopedPath);
                     var used = GetUsed(usedByNamespace, namespaceKey);
                     var candidate = Sanitize(type.Name);
-                    if (type.NamespacePath.Count == 0 && used.Contains(candidate))
-                    {
-                        candidate = "JsonStructure_" + candidate;
-                    }
-
                     var localName = Allocate(candidate, used);
                     _localNames[type] = localName;
-                    if (type.NamespacePath.Count == 0)
+                    var qualifiedParts = scopedPath.Select((_, index) =>
                     {
-                        _names[type] = localName;
-                    }
-                    else
-                    {
-                        var qualifiedParts = type.NamespacePath.Select((_, index) =>
-                        {
-                            var path = type.NamespacePath.Take(index + 1);
-                            return _namespaceNames[string.Join("\u001f", path)];
-                        }).ToList();
-                        qualifiedParts.Add(localName);
-                        _names[type] = string.Join(".", qualifiedParts);
-                    }
+                        var path = scopedPath.Take(index + 1);
+                        return _namespaceNames[string.Join("\u001f", path)];
+                    }).ToList();
+                    qualifiedParts.Add(localName);
+                    _names[type] = string.Join(".", qualifiedParts);
                 }
             }
 
@@ -96,17 +114,42 @@ namespace NSwag.JsonStructure.CodeGeneration
 
         public OpenApiDocument Document { get; }
 
+        /// <summary>Gets ordinary OpenAPI names reserved in the aggregate's outer scope.</summary>
+        public IReadOnlyList<string> ReservedNames => _reservedNames;
+
         public bool TryResolvePlaceholder(JsonSchema schema, out string name)
         {
             name = null;
-            if (schema?.ExtensionData == null ||
-                !schema.ExtensionData.TryGetValue(JsonStructureDocumentPreprocessor.CorrelationKeyExtensionName, out var value) ||
-                value is not string pointer ||
+            if (!TryGetPlaceholderModel(schema, out _, out var pointer) ||
                 !_rootNames.TryGetValue(pointer, out name))
             {
                 return false;
             }
 
+            return true;
+        }
+
+        public bool TryGetPlaceholderModel(
+            JsonSchema schema,
+            out JsonStructureCodeGenerationModel model,
+            out string correlationKey)
+        {
+            model = null;
+            correlationKey = null;
+            if (schema?.ExtensionData == null ||
+                !schema.ExtensionData.TryGetValue(JsonStructureDocumentPreprocessor.CorrelationKeyExtensionName, out var value) ||
+                value is not string pointer)
+            {
+                return false;
+            }
+
+            if (!Document.GetJsonStructureDocumentModel().LiftedSchemas.TryGetValue(pointer, out var document) ||
+                !_models.TryGetValue(document, out model))
+            {
+                return false;
+            }
+
+            correlationKey = pointer;
             return true;
         }
 
@@ -123,10 +166,19 @@ namespace NSwag.JsonStructure.CodeGeneration
             return _localNames.TryGetValue(type, out var name) ? name : Sanitize(type.Name);
         }
 
+        /// <summary>Gets the unsanitized aggregate namespace path rooted at the schema resource name.</summary>
+        public IReadOnlyList<string> GetScopePath(JsonStructureCodeGenerationNamedType type)
+        {
+            return _typeModels.TryGetValue(type, out var model)
+                ? model.GetScopedNamespacePath(type)
+                : type.NamespacePath;
+        }
+
         public IReadOnlyList<string> GetNamespacePath(JsonStructureCodeGenerationNamedType type)
         {
-            return type.NamespacePath.Select((_, index) =>
-                _namespaceNames[string.Join("\u001f", type.NamespacePath.Take(index + 1))]).ToList();
+            var path = GetScopePath(type);
+            return path.Select((_, index) =>
+                _namespaceNames[string.Join("\u001f", path.Take(index + 1))]).ToList();
         }
 
         private static HashSet<string> GetUsed(Dictionary<string, HashSet<string>> usedByNamespace, string key)
@@ -138,6 +190,68 @@ namespace NSwag.JsonStructure.CodeGeneration
             }
 
             return used;
+        }
+
+        private static IEnumerable<JsonStructureCodeGenerationNamedType> GetOwnedTypes(
+            JsonStructureCodeGenerationModel model)
+        {
+            var seen = new HashSet<JsonStructureCodeGenerationNamedType>();
+            foreach (var type in model.Types)
+            {
+                foreach (var owned in GetOwnedTypes(type, seen))
+                {
+                    yield return owned;
+                }
+            }
+        }
+
+        private static IEnumerable<JsonStructureCodeGenerationNamedType> GetOwnedTypes(
+            JsonStructureCodeGenerationNamedType type,
+            ISet<JsonStructureCodeGenerationNamedType> seen)
+        {
+            if (type == null || !seen.Add(type))
+            {
+                yield break;
+            }
+
+            yield return type;
+            foreach (var reference in type.Properties.Select(property => property.Type)
+                .Concat(type.Choices.Select(choice => choice.Type))
+                .Concat(new[] { type.Items, type.Values }))
+            {
+                foreach (var owned in GetOwnedTypes(reference, seen))
+                {
+                    yield return owned;
+                }
+            }
+        }
+
+        private static IEnumerable<JsonStructureCodeGenerationNamedType> GetOwnedTypes(
+            JsonStructureCodeGenerationTypeReference reference,
+            ISet<JsonStructureCodeGenerationNamedType> seen)
+        {
+            if (reference == null)
+            {
+                yield break;
+            }
+
+            if (reference.InlineType != null && !string.IsNullOrWhiteSpace(reference.InlineType.Name))
+            {
+                foreach (var owned in GetOwnedTypes(reference.InlineType, seen))
+                {
+                    yield return owned;
+                }
+            }
+
+            foreach (var nested in reference.Union
+                .Concat(reference.TupleElements)
+                .Concat(new[] { reference.ElementType, reference.ValueType }))
+            {
+                foreach (var owned in GetOwnedTypes(nested, seen))
+                {
+                    yield return owned;
+                }
+            }
         }
 
         private static string Allocate(string baseName, HashSet<string> used)

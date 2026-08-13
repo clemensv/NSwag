@@ -20,14 +20,19 @@ namespace NSwag.JsonStructure.CodeGeneration
             JsonStructureDocument document,
             IReadOnlyList<JsonStructureCodeGenerationNamespace> namespaces,
             IReadOnlyList<JsonStructureCodeGenerationNamedType> types,
-            JsonStructureCodeGenerationNamedType rootType)
+            JsonStructureCodeGenerationNamedType rootType,
+            JsonStructureCodeGenerationTypeReference rootTypeReference)
         {
             Document = document;
             AddIns = document.AddIns;
             Namespaces = namespaces;
             Types = types;
             RootType = rootType;
+            RootTypeReference = rootTypeReference;
         }
+
+        /// <summary>Gets the resource scope name used when multiple schema resources are aggregated.</summary>
+        public string ScopeName => Document.Name;
 
         /// <summary>Projects a parsed and resolved document into the code-generation model.</summary>
         public static JsonStructureCodeGenerationModel Create(JsonStructureDocument document)
@@ -76,7 +81,11 @@ namespace NSwag.JsonStructure.CodeGeneration
                 : JsonStructureResolver.ResolvePointer(document, document.RootPointer) is { } rootNamed &&
                   byNamedType.TryGetValue(rootNamed, out var resolvedRoot) ? resolvedRoot : null;
 
-            return new JsonStructureCodeGenerationModel(document, namespaces, bySchema.Values.ToList(), rootType);
+            var rootTypeReference = rootType == null && document.RootSchema != null
+                ? projector.ProjectRoot(document.RootSchema)
+                : null;
+
+            return new JsonStructureCodeGenerationModel(document, namespaces, bySchema.Values.ToList(), rootType, rootTypeReference);
         }
 
         /// <summary>Projects a resolved document into the code-generation model.</summary>
@@ -99,6 +108,22 @@ namespace NSwag.JsonStructure.CodeGeneration
 
         /// <summary>Gets the document root named type, when one is declared.</summary>
         public JsonStructureCodeGenerationNamedType RootType { get; }
+
+        /// <summary>Gets the document root type reference when the root is not a named type.</summary>
+        public JsonStructureCodeGenerationTypeReference RootTypeReference { get; }
+
+        /// <summary>Gets the namespace path of a type within this resource's aggregate scope.</summary>
+        public IReadOnlyList<string> GetScopedNamespacePath(JsonStructureCodeGenerationNamedType type)
+        {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            return string.IsNullOrWhiteSpace(ScopeName)
+                ? type.NamespacePath
+                : new[] { ScopeName }.Concat(type.NamespacePath).ToList();
+        }
 
         private static List<string> GetNamespacePath(JsonStructureNamespace ns)
         {
@@ -158,6 +183,11 @@ namespace NSwag.JsonStructure.CodeGeneration
                 target.TupleOrder = schema.TupleOrder.ToList();
                 target.Items = Project(schema.Items);
                 target.Values = Project(schema.Values);
+            }
+
+            public JsonStructureCodeGenerationTypeReference ProjectRoot(JsonStructureSchema schema)
+            {
+                return Project(schema);
             }
 
             private JsonStructureCodeGenerationProperty ProjectProperty(JsonStructureProperty property)

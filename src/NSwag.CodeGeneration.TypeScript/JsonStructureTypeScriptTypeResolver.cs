@@ -8,6 +8,7 @@ internal sealed class JsonStructureTypeScriptTypeResolver
 {
     private readonly TypeScriptGeneratorSettings _settings;
     private IReadOnlyDictionary<JsonStructureCodeGenerationNamedType, string> _names;
+    internal JsonStructureCodeGenerationNamedType CurrentType { get; set; }
 
     public JsonStructureTypeScriptTypeResolver(TypeScriptGeneratorSettings settings)
     {
@@ -21,14 +22,40 @@ internal sealed class JsonStructureTypeScriptTypeResolver
 
     public string GetName(JsonStructureCodeGenerationNamedType type, JsonStructureCodeGenerationContext context)
     {
-        return _names != null && _names.TryGetValue(type, out var name) ? name : context.GetName(type);
+        var name = _names != null && _names.TryGetValue(type, out var resolved) ? resolved : context.GetName(type);
+        if (CurrentType == null || ReferenceEquals(CurrentType, type))
+        {
+            return ReferenceEquals(CurrentType, type) ? GetLocalName(name) : name;
+        }
+
+        var currentPath = context.GetScopePath(CurrentType);
+        var targetPath = context.GetScopePath(type);
+        if (currentPath.Count == 0 || targetPath.Count == 0 ||
+            !string.Equals(currentPath[0], targetPath[0], StringComparison.Ordinal))
+        {
+            return name;
+        }
+
+        var common = 0;
+        while (common < currentPath.Count && common < targetPath.Count &&
+               string.Equals(currentPath[common], targetPath[common], StringComparison.Ordinal))
+        {
+            common++;
+        }
+
+        var segments = name.Split('.');
+        return common >= targetPath.Count
+            ? segments[^1]
+            : string.Join(".", segments.Skip(common));
     }
 
     public string GetLocalName(JsonStructureCodeGenerationNamedType type, JsonStructureCodeGenerationContext context)
     {
         var name = GetName(type, context);
-        return name[(name.LastIndexOf('.') + 1)..];
+        return GetLocalName(name);
     }
+
+    private static string GetLocalName(string name) => name[(name.LastIndexOf('.') + 1)..];
 
     public string Resolve(JsonStructureCodeGenerationTypeReference type, JsonStructureCodeGenerationContext context)
     {

@@ -21,50 +21,20 @@ internal static class JsonStructureTypeScriptGenerator
         JsonStructureTypeScriptTypeResolver resolver)
     {
         resolver.SetNames(CreateNames(context));
+        var namespaceNames = CreateNamespaceNames(context);
         foreach (var entry in context.Models)
         {
-            if (entry.Types.Any(type => type.NamespacePath.Count > 0))
-            {
-                var code = new StringBuilder();
-                var exportPrefix = settings.ExportTypes ? "export " : string.Empty;
-                foreach (var type in entry.Types.Where(type => type.NamespacePath.Count == 0))
-                {
-                    AppendType(code, type, resolver.GetLocalName(type, context), exportPrefix, resolver, context, settings);
-                }
+            var code = new StringBuilder();
+            var exportPrefix = settings.ExportTypes ? "export " : string.Empty;
+            AppendNamespace(code, entry.Model.ScopeName, entry.Types, [entry.Model.ScopeName], namespaceNames,
+                exportPrefix, resolver, context, settings);
 
-                var namespaceNames = CreateNamespaceNames(context);
-                var namespaces = entry.Types.Where(type => type.NamespacePath.Count > 0)
-                    .GroupBy(type => type.NamespacePath[0], StringComparer.Ordinal);
-                foreach (var group in namespaces)
-                {
-                    AppendNamespace(code, group.Key, entry.Types, [group.Key], namespaceNames,
-                        exportPrefix, resolver, context, settings);
-                }
-
-                yield return new CodeArtifact(entry.Model.RootType == null ? "JsonStructure" :
-                    resolver.GetLocalName(entry.Model.RootType, context), CodeArtifactType.Class,
-                    CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Contract, code.ToString());
-                continue;
-            }
-
-            foreach (var type in entry.Types)
-            {
-                var name = resolver.GetName(type, context);
-                var exportPrefix = settings.ExportTypes ? "export " : string.Empty;
-                var isClass = settings.TypeStyle == TypeScriptTypeStyle.Class ||
-                              settings.ClassTypes?.Contains(type.Name) == true;
-                var code = type.Kind switch
-                {
-                    JsonStructureTypeKind.Tuple => Tuple(type, name, exportPrefix, resolver, context),
-                    JsonStructureTypeKind.Choice => Choice(type, name, exportPrefix, resolver, context),
-                    _ => isClass
-                        ? Class(type, name, exportPrefix, resolver, context, settings)
-                        : Interface(type, name, exportPrefix, resolver, context, settings)
-                };
-
-                yield return new CodeArtifact(name, CodeArtifactType.Class, CodeArtifactLanguage.TypeScript,
-                    CodeArtifactCategory.Contract, code);
-            }
+            yield return new CodeArtifact(
+                namespaceNames[entry.Model.ScopeName],
+                CodeArtifactType.Class,
+                CodeArtifactLanguage.TypeScript,
+                CodeArtifactCategory.Contract,
+                code.ToString());
         }
     }
 
@@ -72,17 +42,26 @@ internal static class JsonStructureTypeScriptGenerator
         string exportPrefix, JsonStructureTypeScriptTypeResolver resolver,
         JsonStructureCodeGenerationContext context, TypeScriptGeneratorSettings settings)
     {
-        var isClass = settings.TypeStyle == TypeScriptTypeStyle.Class ||
-                      settings.ClassTypes?.Contains(type.Name) == true;
-        var rendered = type.Kind switch
+        var previousType = resolver.CurrentType;
+        resolver.CurrentType = type;
+        try
         {
-            JsonStructureTypeKind.Tuple => Tuple(type, name, exportPrefix, resolver, context),
-            JsonStructureTypeKind.Choice => Choice(type, name, exportPrefix, resolver, context),
-            _ => isClass
-                ? Class(type, name, exportPrefix, resolver, context, settings)
-                : Interface(type, name, exportPrefix, resolver, context, settings)
-        };
-        code.AppendLine(rendered);
+            var isClass = settings.TypeStyle == TypeScriptTypeStyle.Class ||
+                          settings.ClassTypes?.Contains(type.Name) == true;
+            var rendered = type.Kind switch
+            {
+                JsonStructureTypeKind.Tuple => Tuple(type, name, exportPrefix, resolver, context),
+                JsonStructureTypeKind.Choice => Choice(type, name, exportPrefix, resolver, context),
+                _ => isClass
+                    ? Class(type, name, exportPrefix, resolver, context, settings)
+                    : Interface(type, name, exportPrefix, resolver, context, settings)
+            };
+            code.AppendLine(rendered);
+        }
+        finally
+        {
+            resolver.CurrentType = previousType;
+        }
     }
 
     private static void AppendNamespace(StringBuilder code, string rawName,
@@ -93,7 +72,7 @@ internal static class JsonStructureTypeScriptGenerator
         var name = namespaceNames[string.Join("\u001f", path)];
         var indent = new string(' ', path.Length * 4);
         code.Append(indent).Append(exportPrefix).Append("namespace ").Append(name).AppendLine(" {");
-        foreach (var type in types.Where(type => type.NamespacePath.SequenceEqual(path)))
+        foreach (var type in types.Where(type => context.GetScopePath(type).SequenceEqual(path)))
         {
             var rendered = new StringBuilder();
             AppendType(rendered, type, resolver.GetLocalName(type, context), exportPrefix, resolver, context, settings);
@@ -106,11 +85,10 @@ internal static class JsonStructureTypeScriptGenerator
             }
         }
 
-        var children = types.Where(type => type.NamespacePath.Count > path.Length &&
-                type.NamespacePath.Take(path.Length).SequenceEqual(path))
-            .Select(type => type.NamespacePath[path.Length])
+        var children = types.Where(type => context.GetScopePath(type).Count > path.Length &&
+                context.GetScopePath(type).Take(path.Length).SequenceEqual(path))
+            .Select(type => context.GetScopePath(type)[path.Length])
             .Distinct(StringComparer.Ordinal);
-        var childUsed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var child in children)
         {
             AppendNamespace(code, child, types, path.Append(child).ToArray(), namespaceNames,
@@ -119,14 +97,17 @@ internal static class JsonStructureTypeScriptGenerator
         code.Append(indent).AppendLine("}");
     }
 
-    private static Dictionary<JsonStructureCodeGenerationNamedType, string> CreateNames(
+    internal static Dictionary<JsonStructureCodeGenerationNamedType, string> CreateNames(
         JsonStructureCodeGenerationContext context)
     {
         var names = new Dictionary<JsonStructureCodeGenerationNamedType, string>();
         var namespaceNames = CreateNamespaceNames(context);
         var usedByNamespace = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        foreach (var path in context.Models.SelectMany(entry => entry.Model.Namespaces)
-                     .Select(namespaceModel => namespaceModel.Path).Where(path => path.Count > 0))
+        foreach (var path in context.Models.SelectMany(entry =>
+                     new[] { (IReadOnlyList<string>)new[] { entry.Model.ScopeName } }
+                         .Concat(entry.Model.Namespaces.Select(namespaceModel =>
+                             (IReadOnlyList<string>)new[] { entry.Model.ScopeName }.Concat(namespaceModel.Path).ToList())))
+                     .Where(path => path.Count > 0))
         {
             var parent = string.Join("\u001f", path.Take(path.Count - 1));
             if (!usedByNamespace.TryGetValue(parent, out var used))
@@ -138,15 +119,16 @@ internal static class JsonStructureTypeScriptGenerator
         }
         foreach (var type in context.Models.SelectMany(entry => entry.Types))
         {
-            var key = string.Join("\u001f", type.NamespacePath);
+            var scopePath = context.GetScopePath(type);
+            var key = string.Join("\u001f", scopePath);
             if (!usedByNamespace.TryGetValue(key, out var used))
             {
                 used = new HashSet<string>(StringComparer.Ordinal);
                 usedByNamespace[key] = used;
             }
             var local = UniqueIdentifier(context.GetLocalName(type), used);
-            var prefix = type.NamespacePath.Select((_, index) =>
-                namespaceNames[string.Join("\u001f", type.NamespacePath.Take(index + 1))]);
+            var prefix = scopePath.Select((_, index) =>
+                namespaceNames[string.Join("\u001f", scopePath.Take(index + 1))]);
             names[type] = string.Join(".", prefix.Append(local));
         }
         return names;
@@ -156,8 +138,15 @@ internal static class JsonStructureTypeScriptGenerator
     {
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
         var usedByParent = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        foreach (var path in context.Models.SelectMany(entry => entry.Model.Namespaces)
-                     .Select(namespaceModel => namespaceModel.Path).Where(path => path.Count > 0))
+        var rootUsed = new HashSet<string>(
+            context.ReservedNames.Select(Sanitize),
+            StringComparer.Ordinal);
+        usedByParent[string.Empty] = rootUsed;
+        foreach (var path in context.Models.SelectMany(entry =>
+                     new[] { (IReadOnlyList<string>)new[] { entry.Model.ScopeName } }
+                         .Concat(entry.Model.Namespaces.Select(namespaceModel =>
+                             (IReadOnlyList<string>)new[] { entry.Model.ScopeName }.Concat(namespaceModel.Path).ToList())))
+                     .Where(path => path.Count > 0))
         {
             var key = string.Join("\u001f", path);
             if (names.ContainsKey(key))
@@ -253,7 +242,7 @@ internal static class JsonStructureTypeScriptGenerator
         code.AppendLine().Append(exportPrefix).Append("interface I").Append(name);
         if (type.BaseType != null)
         {
-            code.Append(" extends I").Append(resolver.GetName(type.BaseType, context));
+            code.Append(" extends ").Append(GetInterfaceName(resolver.GetName(type.BaseType, context)));
         }
         code.AppendLine(" {");
         AppendProperties(code, type, resolver, context, settings, "    ");
@@ -478,6 +467,14 @@ internal static class JsonStructureTypeScriptGenerator
     private static string Sanitize(string name) => string.IsNullOrWhiteSpace(name) ? "value" :
         TypeScriptReservedNames.Contains(name) ? "_" + name :
         new(name.Select((c, i) => (char.IsLetterOrDigit(c) || c == '_') && (i > 0 || !char.IsDigit(c)) ? c : '_').ToArray());
+
+    private static string GetInterfaceName(string name)
+    {
+        var separator = name.LastIndexOf('.');
+        return separator < 0
+            ? "I" + name
+            : name[..(separator + 1)] + "I" + name[(separator + 1)..];
+    }
 
     private static readonly HashSet<string> TypeScriptReservedNames =
     [
