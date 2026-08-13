@@ -1,0 +1,274 @@
+﻿// basic-types.struct.json
+
+#nullable enable
+
+
+namespace Corpus.Generated
+{
+    using System = global::System;
+
+    
+
+    namespace BasicTypes
+    {
+        public partial class BasicTypes
+        {
+            public string stringField { get; set; }
+            public int intField { get; set; }
+            public long? longField { get; set; }
+            public float? floatField { get; set; }
+            public double? doubleField { get; set; }
+            public bool? booleanField { get; set; }
+            public System.Guid? uuidField { get; set; }
+            public byte[]? bytesField { get; set; }
+        }
+    }
+
+    public static class JsonStructureConverters
+    {
+        public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
+        {
+            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();        settings.Converters.Add(new Int64StringConverter());
+            settings.Converters.Add(new NullableInt64StringConverter());
+            return settings;
+        }
+    }
+    public sealed class Int64StringConverter : global::Newtonsoft.Json.JsonConverter<long>
+    {
+        public override long ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
+    }
+    public sealed class NullableInt64StringConverter : global::Newtonsoft.Json.JsonConverter<long?>
+    {
+        public override long? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, long? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : long.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, long? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
+    }
+
+
+
+}
+
+// choice-types.struct.json
+
+#nullable enable
+
+
+namespace Corpus.Generated
+{
+    using System = global::System;
+
+    
+
+    namespace ChoiceTypes
+    {
+        public abstract partial class BaseEntity
+        {
+            public string? name { get; set; }
+            public string? entityType { get; set; }
+        }
+    }
+
+    namespace ChoiceTypes
+    {
+        public partial class Person : global::Corpus.Generated.ChoiceTypes.BaseEntity
+        {
+            public int? age { get; set; }
+        }
+    }
+
+    namespace ChoiceTypes
+    {
+        public partial class Company : global::Corpus.Generated.ChoiceTypes.BaseEntity
+        {
+            public int? employees { get; set; }
+        }
+    }
+
+    namespace ChoiceTypes
+    {
+        public partial class ChoiceTypes
+        {
+            public global::Corpus.Generated.ChoiceTypes.TaggedChoice taggedChoice { get; set; }
+            public global::Corpus.Generated.ChoiceTypes.EntityChoice? inlineChoice { get; set; }
+            public string? nullableString { get; set; }
+        }
+    }
+
+    namespace ChoiceTypes
+    {
+        [global::Newtonsoft.Json.JsonConverter(typeof(ChoiceTypes_TaggedChoiceJsonConverter))]public abstract partial class TaggedChoice
+        {
+        }
+    }
+
+    namespace ChoiceTypes
+    {
+        [global::Newtonsoft.Json.JsonConverter(typeof(ChoiceTypes_EntityChoiceJsonConverter))]
+        public partial class EntityChoice
+        {
+            public global::Corpus.Generated.ChoiceTypes.BaseEntity Value { get; set; }
+        }
+    }
+
+    public sealed class ChoiceTypes_EntityChoiceJsonConverter : global::Newtonsoft.Json.JsonConverter<ChoiceTypes.EntityChoice>
+    {
+        public override ChoiceTypes.EntityChoice ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ChoiceTypes.EntityChoice existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer)
+        {
+            var objectValue = global::Newtonsoft.Json.Linq.JObject.Load(reader);        if (objectValue.Property("age") != null) return new ChoiceTypes.EntityChoice { Value = objectValue.ToObject<global::Corpus.Generated.ChoiceTypes.Person>(serializer)! };
+            if (objectValue.Property("employees") != null) return new ChoiceTypes.EntityChoice { Value = objectValue.ToObject<global::Corpus.Generated.ChoiceTypes.Company>(serializer)! };
+            throw new global::Newtonsoft.Json.JsonSerializationException("No known variant property found for ChoiceTypes.EntityChoice.");
+        }
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ChoiceTypes.EntityChoice value, global::Newtonsoft.Json.JsonSerializer serializer)
+            => serializer.Serialize(writer, value.Value);
+    }
+
+    #warning JSON Structure tagged choice 'TaggedChoice' has variants without object discriminator properties; Newtonsoft.Json polymorphism was not generated. Use object variants with a const discriminator.
+
+
+
+}
+
+// collections.struct.json
+
+#nullable enable
+
+
+namespace Corpus.Generated
+{
+    using System = global::System;
+
+    
+
+    namespace Collections
+    {
+        public partial class Collections
+        {
+            public System.Collections.Generic.ICollection<string> stringArray { get; set; }
+            public System.Collections.Generic.HashSet<int>? numberSet { get; set; }
+            public System.Collections.Generic.IDictionary<string, double>? stringToNumberMap { get; set; }
+            public System.Collections.Generic.ICollection<System.Collections.Generic.ICollection<string>>? nestedArray { get; set; }
+        }
+    }
+
+
+
+}
+
+// numeric-types.struct.json
+
+#nullable enable
+
+
+namespace Corpus.Generated
+{
+    using System = global::System;
+
+    
+
+    namespace NumericTypes
+    {
+        public partial class NumericTypes
+        {
+            public sbyte int8Field { get; set; }
+            public short? int16Field { get; set; }
+            public uint? uint32Field { get; set; }
+            public ulong? uint64Field { get; set; }
+            public decimal decimalField { get; set; }
+            public float? float32Field { get; set; }
+            public double? float64Field { get; set; }
+        }
+    }
+
+    public static class JsonStructureConverters
+    {
+        public static global::Newtonsoft.Json.JsonSerializerSettings GetSettings()
+        {
+            var settings = new global::Newtonsoft.Json.JsonSerializerSettings();        settings.Converters.Add(new UInt64StringConverter());
+            settings.Converters.Add(new NullableUInt64StringConverter());
+            settings.Converters.Add(new DecimalStringConverter());
+            settings.Converters.Add(new NullableDecimalStringConverter());
+            return settings;
+        }
+    }
+    public sealed class UInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong>
+    {
+        public override ulong ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
+    }
+    public sealed class NullableUInt64StringConverter : global::Newtonsoft.Json.JsonConverter<ulong?>
+    {
+        public override ulong? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, ulong? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : ulong.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, ulong? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
+    }
+    public sealed class DecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal>
+    {
+        public override decimal ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.ToString(global::System.Globalization.CultureInfo.InvariantCulture));
+    }
+    public sealed class NullableDecimalStringConverter : global::Newtonsoft.Json.JsonConverter<decimal?>
+    {
+        public override decimal? ReadJson(global::Newtonsoft.Json.JsonReader reader, global::System.Type objectType, decimal? existingValue, bool hasExistingValue, global::Newtonsoft.Json.JsonSerializer serializer) => reader.TokenType == global::Newtonsoft.Json.JsonToken.Null ? null : decimal.Parse(global::System.Convert.ToString(reader.Value, global::System.Globalization.CultureInfo.InvariantCulture)!, global::System.Globalization.CultureInfo.InvariantCulture);
+        public override void WriteJson(global::Newtonsoft.Json.JsonWriter writer, decimal? value, global::Newtonsoft.Json.JsonSerializer serializer) => writer.WriteValue(value.HasValue ? value.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : null);
+    }
+
+
+
+}
+
+// advanced-features.struct.json
+
+#nullable enable
+
+
+namespace Corpus.Generated
+{
+    using System = global::System;
+
+    
+
+    namespace AdvancedFeatures
+    {
+        [global::System.Obsolete]
+        public partial class AdvancedFeatures
+        {
+            public string constField { get; set; } = "FIXED_VALUE";
+            [global::System.Obsolete]
+            public int? deprecatedField { get; set; }
+            public string? readOnlyField { get; }
+            public string? writeOnlyField { set; }
+            [global::System.ComponentModel.DataAnnotations.MaxLength(50)]
+            public string? validatedString { get; set; }
+        }
+    }
+
+
+
+}
+
+// validation-constraints.struct.json
+
+#nullable enable
+
+
+namespace Corpus.Generated
+{
+    using System = global::System;
+
+    
+
+    namespace ValidationConstraints
+    {
+        public partial class ValidationConstraints
+        {
+            [global::System.ComponentModel.DataAnnotations.MaxLength(50)]
+            public string constrainedString { get; set; }
+            public string enumField { get; set; }
+            public string? constField { get; set; } = "fixed-value";
+            public int? numberWithConstraints { get; set; }
+            public double? exclusiveRangeNumber { get; set; }
+        }
+    }
+
+
+
+}

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn),618;CA1707</NoWarn>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NSwag.Core.Yaml\NSwag.Core.Yaml.csproj" />
+    <ProjectReference Include="..\NSwag.Core\NSwag.Core.csproj" />
+    <ProjectReference Include="..\NSwag.JsonStructure\NSwag.JsonStructure.csproj" />
+    <ProjectReference Include="..\NSwag.Generation\NSwag.Generation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Schemas\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Documents\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Documents\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

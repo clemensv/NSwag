@@ -22,7 +22,15 @@ namespace NSwag.Commands
         public static Task<bool> TryWriteDocumentOutputAsync(this IOutputCommand command, IConsoleHost host, NewLineBehavior newLineBehavior, Func<OpenApiDocument> generator)
         {
             return TryWriteFileOutputAsync(command, command.OutputFilePath, host, newLineBehavior, () =>
-                command.OutputFilePath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) ? OpenApiYamlDocument.ToYaml(generator()) : generator().ToJson());
+            {
+                var document = generator();
+                var outputType = command is OutputCommandBase outputCommand
+                    ? outputCommand.OutputType
+                    : OpenApiDocumentOutputType.Default;
+                return command.OutputFilePath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase)
+                    ? OpenApiYamlDocument.ToYaml(document, outputType)
+                    : document.ToJson(outputType);
+            });
         }
 
         public static Task<bool> TryWriteFileOutputAsync(this IOutputCommand command, string path, IConsoleHost host, NewLineBehavior newLineBehavior, Func<string> generator)

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-structure.org/meta/core/v0/#",
+  "$id": "https://schemas.example.com/invalid-unknown-type",
+  "name": "InvalidUnknownType",
+  "type": "object",
+  "properties": {
+    "value": { "type": "varchar" }
+  }
+}

@@ -75,6 +75,10 @@ namespace NSwag
         [JsonProperty(PropertyName = "openapi", Order = 3, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         public string OpenApi { get; set; }
 
+        /// <summary>Gets or sets the default JSON Schema dialect for OpenAPI 3.1 Schema Objects.</summary>
+        [JsonProperty(PropertyName = "jsonSchemaDialect", Order = 3, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        public string JsonSchemaDialect { get; set; }
+
         /// <summary>Gets or sets the metadata about the API.</summary>
         [JsonProperty(PropertyName = "info", Order = 4, DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         public OpenApiInfo Info { get; set; }
@@ -114,6 +118,25 @@ namespace NSwag
             return ToJson(SchemaType);
         }
 
+        /// <summary>Converts the description object to JSON using the specified NSwag output mode.</summary>
+        public string ToJson(OpenApiDocumentOutputType outputType)
+        {
+            if (outputType == OpenApiDocumentOutputType.Default)
+            {
+                return ToJson();
+            }
+
+            if (outputType != OpenApiDocumentOutputType.OpenApi31JsonStructure)
+            {
+                throw new ArgumentException("The output type '" + outputType + "' is not supported.", nameof(outputType));
+            }
+
+            GenerateOperationIds();
+            var contractResolver = GetJsonSerializerContractResolver(SchemaType.OpenApi3);
+            var json = JsonSchemaSerialization.ToJson(this, SchemaType.OpenApi3, contractResolver, Formatting.Indented);
+            return JsonStructureRoundTrip.TryRestore31(this, json, Formatting.Indented);
+        }
+
         /// <summary>Converts the description object to JSON.</summary>
         /// <param name="schemaType">The schema type.</param>
         /// <returns>The JSON string.</returns>
@@ -132,7 +155,8 @@ namespace NSwag
             GenerateOperationIds();
 
             var contractResolver = GetJsonSerializerContractResolver(schemaType);
-            return JsonSchemaSerialization.ToJson(this, schemaType, contractResolver, formatting);
+            var json = JsonSchemaSerialization.ToJson(this, schemaType, contractResolver, formatting);
+            return JsonStructureRoundTrip.TryRestore(this, json, formatting);
         }
 
         /// <summary>Creates a Swagger specification from a JSON string.</summary>
@@ -141,7 +165,7 @@ namespace NSwag
         /// <returns>The <see cref="OpenApiDocument"/>.</returns>
         public static Task<OpenApiDocument> FromJsonAsync(string data, CancellationToken cancellationToken = default)
         {
-            return FromJsonAsync(data, null, SchemaType.Swagger2, null, cancellationToken);
+            return FromJsonAsync(data, null, SchemaType.Swagger2, (OpenApiDocumentLoadSettings)null, cancellationToken);
         }
 
         /// <summary>Creates a Swagger specification from a JSON string.</summary>
@@ -151,7 +175,7 @@ namespace NSwag
         /// <returns>The <see cref="OpenApiDocument"/>.</returns>
         public static Task<OpenApiDocument> FromJsonAsync(string data, string documentPath, CancellationToken cancellationToken = default)
         {
-            return FromJsonAsync(data, documentPath, SchemaType.Swagger2, null, cancellationToken);
+            return FromJsonAsync(data, documentPath, SchemaType.Swagger2, (OpenApiDocumentLoadSettings)null, cancellationToken);
         }
 
         /// <summary>Creates a Swagger specification from a JSON string.</summary>
@@ -163,7 +187,15 @@ namespace NSwag
         public static Task<OpenApiDocument> FromJsonAsync(string data, string documentPath,
             SchemaType expectedSchemaType, CancellationToken cancellationToken = default)
         {
-            return FromJsonAsync(data, documentPath, expectedSchemaType, null, cancellationToken);
+            return FromJsonAsync(data, documentPath, expectedSchemaType, (OpenApiDocumentLoadSettings)null, cancellationToken);
+        }
+
+        /// <summary>Creates a Swagger specification from JSON using explicit load settings.</summary>
+        public static Task<OpenApiDocument> FromJsonAsync(string data, string documentPath,
+            SchemaType expectedSchemaType, OpenApiDocumentLoadSettings loadSettings,
+            CancellationToken cancellationToken = default)
+        {
+            return FromJsonAsync(data, documentPath, expectedSchemaType, null, loadSettings, cancellationToken);
         }
 
         /// <summary>Creates a Swagger specification from a JSON string.</summary>
@@ -175,6 +207,14 @@ namespace NSwag
         /// <returns>The <see cref="OpenApiDocument"/>.</returns>
         public static async Task<OpenApiDocument> FromJsonAsync(string data, string documentPath, SchemaType expectedSchemaType,
             Func<OpenApiDocument, JsonReferenceResolver> referenceResolverFactory, CancellationToken cancellationToken = default)
+        {
+            return await FromJsonAsync(data, documentPath, expectedSchemaType, referenceResolverFactory, null, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        private static async Task<OpenApiDocument> FromJsonAsync(string data, string documentPath, SchemaType expectedSchemaType,
+            Func<OpenApiDocument, JsonReferenceResolver> referenceResolverFactory, OpenApiDocumentLoadSettings loadSettings,
+            CancellationToken cancellationToken)
         {
             // For explanation of the regex use https://regexr.com/ and the below unescaped pattern that is without named groups
             // (?:\"(openapi|swagger)\")(?:\s*:\s*)(?:\"([^"]*)\")
@@ -200,8 +240,17 @@ namespace NSwag
                 throw new NotSupportedException("The schema type JsonSchema is not supported.");
             }
 
+            PreprocessedJsonStructureDocument preprocessing = null;
+            if (expectedSchemaType == SchemaType.OpenApi3 && match.Success &&
+                match.Groups["schemaType"].Value.Equals("openapi", StringComparison.OrdinalIgnoreCase) &&
+                match.Groups["schemaVersion"].Value.StartsWith("3.1", StringComparison.OrdinalIgnoreCase))
+            {
+                preprocessing = TryPreprocessJsonStructureDocument(data, documentPath, loadSettings?.JsonStructureSettings);
+                data = preprocessing.Data;
+            }
+
             var contractResolver = GetJsonSerializerContractResolver(expectedSchemaType);
-            return await JsonSchemaSerialization.FromJsonAsync<OpenApiDocument>(data, expectedSchemaType, documentPath, document =>
+            var result = await JsonSchemaSerialization.FromJsonAsync<OpenApiDocument>(data, expectedSchemaType, documentPath, document =>
             {
                 document.SchemaType = expectedSchemaType;
                 if (referenceResolverFactory != null)
@@ -214,6 +263,74 @@ namespace NSwag
                     return new JsonReferenceResolver(schemaResolver);
                 }
             }, contractResolver, cancellationToken).ConfigureAwait(false);
+
+            if (preprocessing?.Result != null)
+            {
+                TryAttachJsonStructureDocumentModel(result, preprocessing.Result);
+            }
+
+            return result;
+        }
+
+        private static PreprocessedJsonStructureDocument TryPreprocessJsonStructureDocument(string data, string documentPath, object jsonStructureSettings)
+        {
+            var preprocessorType = Type.GetType(
+                "NSwag.JsonStructure.OpenApi.JsonStructureDocumentPreprocessor, NSwag.JsonStructure",
+                throwOnError: false);
+            if (preprocessorType == null)
+            {
+                return new PreprocessedJsonStructureDocument(data, null);
+            }
+
+            var preprocessor = Activator.CreateInstance(preprocessorType);
+            var preprocess = jsonStructureSettings == null
+                ? preprocessorType.GetMethod("Preprocess", [typeof(Newtonsoft.Json.Linq.JObject), typeof(string)])
+                : preprocessorType.GetMethod("Preprocess", [typeof(Newtonsoft.Json.Linq.JObject), typeof(string), jsonStructureSettings.GetType()]);
+            if (preprocess == null)
+            {
+                return new PreprocessedJsonStructureDocument(data, null);
+            }
+
+            try
+            {
+                var document = Newtonsoft.Json.Linq.JObject.Parse(data);
+                var args = jsonStructureSettings == null
+                    ? new object[] { document, documentPath ?? "urn:nswag:openapi-document" }
+                    : new object[] { document, documentPath ?? "urn:nswag:openapi-document", jsonStructureSettings };
+                var result = preprocess.Invoke(preprocessor, args);
+                var processedDocument = (Newtonsoft.Json.Linq.JObject)result.GetType().GetProperty("Document").GetValue(result);
+                return new PreprocessedJsonStructureDocument(processedDocument.ToString(Formatting.None), result);
+            }
+            catch (System.Reflection.TargetInvocationException exception) when (exception.InnerException != null)
+            {
+                throw exception.InnerException;
+            }
+        }
+
+        private static void TryAttachJsonStructureDocumentModel(OpenApiDocument document, object preprocessResult)
+        {
+            var extensionsType = Type.GetType(
+                "NSwag.JsonStructure.OpenApi.JsonStructureDocumentExtensions, NSwag.JsonStructure",
+                throwOnError: false);
+            var modelType = Type.GetType(
+                "NSwag.JsonStructure.OpenApi.JsonStructurePreprocessResult, NSwag.JsonStructure",
+                throwOnError: false);
+            var attach = extensionsType?.GetMethod(
+                "AttachJsonStructureDocumentModel",
+                [typeof(OpenApiDocument), modelType]);
+            attach?.Invoke(null, [document, preprocessResult]);
+        }
+
+        private sealed class PreprocessedJsonStructureDocument
+        {
+            public PreprocessedJsonStructureDocument(string data, object result)
+            {
+                Data = data;
+                Result = result;
+            }
+
+            public string Data { get; }
+            public object Result { get; }
         }
 
         /// <summary>Creates a Swagger specification from a JSON file.</summary>

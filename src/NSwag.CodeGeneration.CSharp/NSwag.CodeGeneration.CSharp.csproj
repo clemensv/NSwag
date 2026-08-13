@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NSwag.CodeGeneration\NSwag.CodeGeneration.csproj" />
+    <ProjectReference Include="..\NSwag.JsonStructure\NSwag.JsonStructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

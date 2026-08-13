@@ -20,6 +20,7 @@
     <ProjectReference Include="..\NSwag.CodeGeneration.TypeScript\NSwag.CodeGeneration.TypeScript.csproj" />
     <ProjectReference Include="..\NSwag.Core.Yaml\NSwag.Core.Yaml.csproj" />
     <ProjectReference Include="..\NSwag.Generation.AspNetCore\NSwag.Generation.AspNetCore.csproj" />
+    <ProjectReference Include="..\NSwag.JsonStructure\NSwag.JsonStructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

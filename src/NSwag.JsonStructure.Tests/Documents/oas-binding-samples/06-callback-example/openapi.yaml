@@ -1,0 +1,75 @@
+openapi: "3.1.0"
+info:
+  title: Callback Example
+  version: "1.0.0"
+  description: >-
+    Adapted from the OpenAPI Initiative's "Callback Example". Demonstrates a
+    JSON Structure schema resource (`SubscriptionPayload`) used as the body
+    of an OAS Callback Object, activating `JSONStructureUnits` to annotate a
+    sensor reading with a UCUM unit.
+jsonSchemaDialect: https://json-structure.org/meta/extended/v0/#
+paths:
+  /streams:
+    post:
+      operationId: subscribe
+      summary: Subscribe to a stream of sensor readings
+      parameters:
+        - name: callbackUrl
+          in: query
+          required: true
+          description: >-
+            The location where data will be sent. Must be network accessible
+            by the source server.
+          schema:
+            type: uri
+      responses:
+        "201":
+          description: Subscription successfully created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResponse"
+      callbacks:
+        onData:
+          "{$request.query.callbackUrl}/data":
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/SubscriptionPayload"
+              responses:
+                "200":
+                  description: >-
+                    Your server implementation should return this HTTP status
+                    code if the data was received successfully.
+components:
+  schemas:
+    SubscriptionResponse:
+      $schema: https://json-structure.org/meta/core/v0/#
+      name: SubscriptionResponse
+      type: object
+      required:
+        - subscriptionId
+      properties:
+        subscriptionId:
+          type: uuid
+    SubscriptionPayload:
+      $schema: https://json-structure.org/meta/extended/v0/#
+      $uses:
+        - JSONStructureUnits
+      name: SubscriptionPayload
+      type: object
+      required:
+        - timestamp
+        - temperature
+      properties:
+        timestamp:
+          type: datetime
+        temperature:
+          type: double
+          ucumUnit: "Cel"
+          symbol: "\u00b0C"
+        userData:
+          type: string

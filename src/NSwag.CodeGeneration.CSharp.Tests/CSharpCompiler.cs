@@ -41,8 +41,7 @@ public static class CSharpCompiler
         var emitResult = compilation.Emit(dllStream, pdbStream);
         if (!emitResult.Success)
         {
-            // emitResult.Diagnostics
-            Assert.Empty(emitResult.Diagnostics);
+            Assert.Empty(emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
         }
     }
 }

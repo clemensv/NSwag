@@ -19,6 +19,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\NSwag.Core.Yaml\NSwag.Core.Yaml.csproj" />
+    <ProjectReference Include="..\NSwag.JsonStructure\NSwag.JsonStructure.csproj" />
   </ItemGroup>
   
   <ItemGroup>

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schemas.example.com/discriminated-unions",
+  "transactionId": "550e8400-e29b-41d4-a716-446655440005",
+  "merchantId": "MERCH_11111",
+  "amount": "25.00",
+  "currency": "USD", 
+  "description": "Digital gift card purchase",
+  "paymentMethod": {
+    "digitalWallet": {
+      "walletProvider": "paypal",
+      "walletAccountId": "user@example.com",
+      "transactionId": "PP123456789"
+    }
+  },
+  "status": "captured",
+  "notification": {
+    "notificationId": "550e8400-e29b-41d4-a716-446655440006",
+    "timestamp": "2023-11-13T17:10:45Z",
+    "priority": "normal",
+    "recipient": "admin@merchantstore.com",
+    "notificationType": "email",
+    "subject": "Payment Completed",
+    "body": "Your payment of $25.00 for a digital gift card has been processed successfully."
+  },
+  "processedAt": "2023-11-13T17:10:45Z",
+  "fees": {
+    "processing": "0.75"
+  }
+}

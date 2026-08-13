@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-structure.org/meta/core/v0/#",
+  "$id": "https://schemas.example.com/official-core-v0-all-types",
+  "name": "CoreV0AllTypes",
+  "$root": "#/definitions/Root",
+  "definitions": {
+    "Root": {
+      "type": "object",
+      "properties": {
+        "stringValue": { "type": "string" },
+        "numberValue": { "type": "number" },
+        "integerValue": { "type": "integer" },
+        "booleanValue": { "type": "boolean" },
+        "nullValue": { "type": "null" },
+        "binaryValue": { "type": "binary" },
+        "int32Value": { "type": "int32" },
+        "uint32Value": { "type": "uint32" },
+        "int64Value": { "type": "int64" },
+        "uint64Value": { "type": "uint64" },
+        "int128Value": { "type": "int128" },
+        "uint128Value": { "type": "uint128" },
+        "floatValue": { "type": "float" },
+        "doubleValue": { "type": "double" },
+        "decimalValue": { "type": "decimal" },
+        "dateValue": { "type": "date" },
+        "datetimeValue": { "type": "datetime" },
+        "timeValue": { "type": "time" },
+        "durationValue": { "type": "duration" },
+        "uuidValue": { "type": "uuid" },
+        "uriValue": { "type": "uri" },
+        "jsonPointerValue": { "type": "jsonpointer" },
+        "objectValue": { "type": { "$ref": "#/definitions/ObjectValue" } },
+        "arrayValue": { "type": { "$ref": "#/definitions/ArrayValue" } },
+        "mapValue": { "type": { "$ref": "#/definitions/MapValue" } },
+        "setValue": { "type": { "$ref": "#/definitions/SetValue" } },
+        "tupleValue": { "type": { "$ref": "#/definitions/TupleValue" } },
+        "choiceValue": { "type": { "$ref": "#/definitions/ChoiceValue" } }
+      }
+    },
+    "ObjectValue": {
+      "type": "object",
+      "properties": {
+        "value": { "type": "string" }
+      }
+    },
+    "ArrayValue": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "MapValue": {
+      "type": "map",
+      "values": { "type": "string" }
+    },
+    "SetValue": {
+      "type": "set",
+      "items": { "type": "string" }
+    },
+    "TupleValue": {
+      "type": "tuple",
+      "properties": {
+        "first": { "type": "string" },
+        "second": { "type": "int32" }
+      },
+      "tuple": ["first", "second"]
+    },
+    "ChoiceValue": {
+      "type": "choice",
+      "choices": {
+        "text": { "type": "string" },
+        "count": { "type": "int32" }
+      }
+    }
+  }
+}

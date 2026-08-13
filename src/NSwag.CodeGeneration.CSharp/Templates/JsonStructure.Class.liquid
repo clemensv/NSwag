@@ -1,0 +1,17 @@
+{% for attribute in Attributes %}{{ attribute }}
+{% endfor %}{% if IsTuple %}{{ TupleAttribute }}
+public partial record struct {{ Name }}({% for property in Properties %}{{ property.Type }} {{ property.Name }}{% unless forloop.last %}, {% endunless %}{% endfor %});
+{% elsif IsInlineChoice %}{{ ChoiceConverterAttribute }}
+public partial class {{ Name }}
+{
+    public {{ WrapperType }} Value { get; set; }
+}
+{% else %}{{ ChoiceConverterAttribute }}{% if IsChoice and ChoiceDiscriminatorProperty and UseSystemTextJson %}[global::System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = "{{ ChoiceDiscriminatorProperty }}")
+{% for variant in ChoiceVariants %}{% if variant.Type != "object" %}[global::System.Text.Json.Serialization.JsonDerivedType(typeof({{ variant.Type }}), "{{ variant.Name }}")
+{% endif %}{% endfor %}]{% endif %}public {% if IsAbstract or IsChoice %}abstract {% endif %}partial class {{ Name }}{% if BaseType %} : {{ BaseType }}{% endif %}
+{
+{% for property in Properties %}{% for attribute in property.Attributes %}    {{ attribute }}
+{% endfor %}{% if property.Documentation %}    {{ property.Documentation }}
+{% endif %}{% if property.JsonIgnoreSelector %}    {{ property.JsonIgnoreSelector }}
+{% endif %}    public {% if property.IsRequired %}required {% endif %}{{ property.Type }} {{ property.Name }} { {% if property.HasGetter %}get; {% endif %}{% if property.HasSetter %}set; {% endif %}}{% if property.DefaultValue %} = {{ property.DefaultValue }};{% endif %}
+{% endfor %}}{% endif %}

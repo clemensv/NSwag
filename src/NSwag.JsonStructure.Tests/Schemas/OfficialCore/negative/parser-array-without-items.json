@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-structure.org/meta/core/v0/#",
+  "$id": "https://schemas.example.com/invalid-array",
+  "name": "InvalidArray",
+  "type": "array"
+}

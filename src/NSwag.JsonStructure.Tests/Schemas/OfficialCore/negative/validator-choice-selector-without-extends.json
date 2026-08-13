@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-structure.org/meta/core/v0/#",
+  "$id": "https://schemas.example.com/invalid-choice",
+  "name": "InvalidChoice",
+  "type": "choice",
+  "selector": "kind",
+  "choices": {
+    "text": { "type": "string" }
+  }
+}

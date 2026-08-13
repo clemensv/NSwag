@@ -10,6 +10,8 @@ using NJsonSchema;
 using NJsonSchema.CodeGeneration;
 using NJsonSchema.CodeGeneration.CSharp;
 using NSwag.CodeGeneration.CSharp.Models;
+using NSwag.JsonStructure.CodeGeneration;
+using NSwag.JsonStructure.OpenApi;
 
 namespace NSwag.CodeGeneration.CSharp
 {
@@ -19,6 +21,7 @@ namespace NSwag.CodeGeneration.CSharp
         private readonly CSharpGeneratorBaseSettings _settings;
         private readonly CSharpTypeResolver _resolver;
         private readonly OpenApiDocument _document;
+        private readonly JsonStructureCodeGenerationContext _jsonStructure;
 
         /// <summary>Initializes a new instance of the <see cref="CSharpGeneratorBase"/> class.</summary>
         /// <param name="document">The document.</param>
@@ -30,6 +33,7 @@ namespace NSwag.CodeGeneration.CSharp
             _document = document;
             _settings = settings;
             _resolver = resolver;
+            _jsonStructure = new JsonStructureCodeGenerationContext(document, GetOrdinaryDefinitionNames(document));
         }
 
         /// <summary>Gets the type.</summary>
@@ -42,6 +46,19 @@ namespace NSwag.CodeGeneration.CSharp
             if (schema == null)
             {
                 return "void";
+            }
+
+            if (_jsonStructure.TryGetPlaceholderModel(schema, out var jsonStructureModel, out _))
+            {
+                var jsonStructureResolver = new JsonStructureCSharpTypeResolver(_settings.CSharpGeneratorSettings);
+                if (jsonStructureModel.RootType != null)
+                {
+                    return jsonStructureResolver.Resolve(jsonStructureModel.RootType, _jsonStructure);
+                }
+                if (jsonStructureModel.RootTypeReference != null)
+                {
+                    return jsonStructureResolver.Resolve(jsonStructureModel.RootTypeReference, _jsonStructure);
+                }
             }
 
             if (schema.ActualTypeSchema.IsBinary)
@@ -101,7 +118,28 @@ namespace NSwag.CodeGeneration.CSharp
         protected override IEnumerable<CodeArtifact> GenerateDtoTypes()
         {
             var generator = new CSharpGenerator(_document, _settings.CSharpGeneratorSettings, _resolver);
-            return generator.GenerateTypes();
+            var jsonStructureStubs = _document.Definitions
+                .Where(pair => IsJsonStructureStub(pair.Value))
+                .Select(pair => pair.Key)
+                .ToHashSet(StringComparer.Ordinal);
+
+            return generator.GenerateTypes()
+                .Where(artifact => !jsonStructureStubs.Contains(artifact.TypeName))
+                .Concat(JsonStructureCSharpGenerator.Generate(_jsonStructure, _settings.CSharpGeneratorSettings));
+        }
+
+        private static IEnumerable<string> GetOrdinaryDefinitionNames(OpenApiDocument document)
+        {
+            return document?.Definitions
+                .Where(pair => !IsJsonStructureStub(pair.Value))
+                .Select(pair => pair.Key) ?? Enumerable.Empty<string>();
+        }
+
+        private static bool IsJsonStructureStub(JsonSchema schema)
+        {
+            return schema?.ExtensionData?.TryGetValue(JsonStructureDocumentPreprocessor.ExtensionName, out var marker) == true &&
+                   marker is bool isStub &&
+                   isStub;
         }
     }
 }

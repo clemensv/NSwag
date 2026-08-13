@@ -1,0 +1,127 @@
+openapi: "3.1.0"
+info:
+  title: TicTacToe
+  version: "1.0.0"
+  description: >-
+    Adapted from the OpenAPI Initiative's "TicTacToe" example. Demonstrates
+    the JSON Structure `tuple` type, including a tuple whose element type is
+    itself a tuple (a 3x3 board made of three 3-cell rows), and the core
+    `enum` keyword for the three possible cell marks.
+jsonSchemaDialect: https://json-structure.org/meta/core/v0/#
+paths:
+  /board:
+    get:
+      summary: Retrieve the whole board
+      operationId: get-board
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+  /board/{row}/{column}:
+    parameters:
+      - name: row
+        in: path
+        required: true
+        schema:
+          type: int32
+          enum: [1, 2, 3]
+      - name: column
+        in: path
+        required: true
+        schema:
+          type: int32
+          enum: [1, 2, 3]
+    get:
+      summary: Get a single board cell
+      operationId: get-square
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mark"
+        "404":
+          description: Cell out of range
+    put:
+      summary: Set a single board cell
+      operationId: put-square
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Mark"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          description: The square is already occupied
+components:
+  schemas:
+    Mark:
+      name: Mark
+      type: string
+      enum:
+        - "."
+        - "X"
+        - "O"
+    Board:
+      name: Board
+      type: tuple
+      description: >-
+        `Row` and `Mark` are duplicated below as local `definitions` so that
+        `Board` is a fully self-contained JSON Structure schema resource:
+        JSON Structure's own `$ref` (used here as `{"type": {"$ref": ...}}`)
+        is document-local only and cannot reach the sibling `Mark` entry in
+        `components.schemas`. The standalone top-level `Mark` schema below is
+        still used directly — via the OpenAPI reference layer's own
+        `$ref` — as the whole request/response schema for the single-cell
+        endpoints, which is a different, unambiguous position (see
+        `samples/README.md`).
+      properties:
+        row1:
+          type:
+            $ref: "#/definitions/Row"
+        row2:
+          type:
+            $ref: "#/definitions/Row"
+        row3:
+          type:
+            $ref: "#/definitions/Row"
+      tuple:
+        - row1
+        - row2
+        - row3
+      definitions:
+        Mark:
+          name: Mark
+          type: string
+          enum:
+            - "."
+            - "X"
+            - "O"
+        Row:
+          name: Row
+          type: tuple
+          properties:
+            col1:
+              type:
+                $ref: "#/definitions/Mark"
+            col2:
+              type:
+                $ref: "#/definitions/Mark"
+            col3:
+              type:
+                $ref: "#/definitions/Mark"
+          tuple:
+            - col1
+            - col2
+            - col3

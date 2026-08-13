@@ -1,0 +1,526 @@
+﻿// basic-types.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace BasicTypes {
+        export class BasicTypes implements IBasicTypes {
+            stringField!: string;
+            intField!: number;
+            longField?: bigint;
+            floatField?: number;
+            doubleField?: number;
+            booleanField?: boolean;
+            uuidField?: string;
+            bytesField?: string;
+            constructor(data?: IBasicTypes) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.stringField = _data["stringField"];
+                    this.intField = _data["intField"];
+                    this.longField = _data["longField"];
+                    this.floatField = _data["floatField"];
+                    this.doubleField = _data["doubleField"];
+                    this.booleanField = _data["booleanField"];
+                    this.uuidField = _data["uuidField"];
+                    this.bytesField = _data["bytesField"] ? Uint8Array.from(Array.prototype.map.call((globalThis as any).atob(_data["bytesField"]), (x: string) => x.charCodeAt(0)) as number[]) : _data["bytesField"];
+                }
+            }
+            static fromJS(data: any): BasicTypes {
+                data = typeof data === 'object' ? data : {};
+                let result = new BasicTypes();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["stringField"] = this.stringField;
+                data["intField"] = this.intField;
+                data["longField"] = this.longField;
+                data["floatField"] = this.floatField;
+                data["doubleField"] = this.doubleField;
+                data["booleanField"] = this.booleanField;
+                data["uuidField"] = this.uuidField;
+                data["bytesField"] = this.bytesField ? (globalThis as any).btoa(String.fromCharCode(...(Array.from(this.bytesField as any) as unknown as number[]))) : this.bytesField;
+                return data;
+            }
+        }
+        export interface IBasicTypes {
+            stringField: string;
+            intField: number;
+            longField?: bigint;
+            floatField?: number;
+            doubleField?: number;
+            booleanField?: boolean;
+            uuidField?: string;
+            bytesField?: string;
+        }
+    }
+
+}
+// choice-types.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace ChoiceTypes {
+        export abstract class BaseEntity implements IBaseEntity {
+            name?: string;
+            entityType?: string;
+            constructor(data?: IBaseEntity) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.name = _data["name"];
+                    this.entityType = _data["entityType"];
+                }
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["name"] = this.name;
+                data["entityType"] = this.entityType;
+                return data;
+            }
+        }
+        export interface IBaseEntity {
+            name?: string;
+            entityType?: string;
+        }
+        export class Person extends BaseEntity implements IPerson {
+            age?: number;
+            constructor(data?: IPerson) {
+                super(data);
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    super.init(_data);
+                    this.age = _data["age"];
+                }
+            }
+            static fromJS(data: any): Person {
+                data = typeof data === 'object' ? data : {};
+                let result = new Person();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                super.toJSON(data);
+                data["age"] = this.age;
+                return data;
+            }
+        }
+        export interface IPerson extends IBaseEntity {
+            age?: number;
+        }
+        export class Company extends BaseEntity implements ICompany {
+            employees?: number;
+            constructor(data?: ICompany) {
+                super(data);
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    super.init(_data);
+                    this.employees = _data["employees"];
+                }
+            }
+            static fromJS(data: any): Company {
+                data = typeof data === 'object' ? data : {};
+                let result = new Company();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                super.toJSON(data);
+                data["employees"] = this.employees;
+                return data;
+            }
+        }
+        export interface ICompany extends IBaseEntity {
+            employees?: number;
+        }
+        export class ChoiceTypes implements IChoiceTypes {
+            taggedChoice!: string | number;
+            inlineChoice?: (Person & { entityType: "Person" }) | (Company & { entityType: "Company" });
+            nullableString?: string | null;
+            constructor(data?: IChoiceTypes) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.taggedChoice = _data["taggedChoice"];
+                    this.inlineChoice = _data["inlineChoice"];
+                    this.nullableString = _data["nullableString"];
+                }
+            }
+            static fromJS(data: any): ChoiceTypes {
+                data = typeof data === 'object' ? data : {};
+                let result = new ChoiceTypes();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["taggedChoice"] = this.taggedChoice;
+                data["inlineChoice"] = this.inlineChoice;
+                data["nullableString"] = this.nullableString;
+                return data;
+            }
+        }
+        export interface IChoiceTypes {
+            taggedChoice: string | number;
+            inlineChoice?: (Person & { entityType: "Person" }) | (Company & { entityType: "Company" });
+            nullableString?: string | null;
+        }
+    }
+
+}
+// collections.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace Collections {
+        export class Collections implements ICollections {
+            stringArray!: string[];
+            numberSet?: Set<number>;
+            stringToNumberMap?: { [key: string]: number };
+            nestedArray?: string[][];
+            constructor(data?: ICollections) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.stringArray = _data["stringArray"];
+                    this.numberSet = new Set((_data["numberSet"] || []).map((x: any) => x));
+                    this.stringToNumberMap = Object.keys(_data["stringToNumberMap"] || {}).reduce((r: any, k: string) => { r[k] = _data["stringToNumberMap"][k]; return r; }, {});
+                    this.nestedArray = _data["nestedArray"];
+                }
+            }
+            static fromJS(data: any): Collections {
+                data = typeof data === 'object' ? data : {};
+                let result = new Collections();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["stringArray"] = this.stringArray;
+                data["numberSet"] = Array.from(this.numberSet || []).map((x: any) => x);
+                data["stringToNumberMap"] = Object.keys(this.stringToNumberMap || {}).reduce((r: any, k: string) => { r[k] = this.stringToNumberMap[k]; return r; }, {});
+                data["nestedArray"] = this.nestedArray;
+                return data;
+            }
+        }
+        export interface ICollections {
+            stringArray: string[];
+            numberSet?: Set<number>;
+            stringToNumberMap?: { [key: string]: number };
+            nestedArray?: string[][];
+        }
+    }
+
+}
+// complex-scenario.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace ComplexScenario {
+        export class ComplexScenario implements IComplexScenario {
+            metadata!: { id: string; version: string; created: Date; tags: Set<string>; };
+            data!: { type: string; value: string; timestamp: Date; device: { id: string; calibration: { [key: string]: number }; }; } | { type: string; name: string; severity: "low" | "medium" | "high" | "critical"; details: { key: string; value: string | bigint | number | boolean; }[]; };
+            signature?: string;
+            constructor(data?: IComplexScenario) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.metadata = _data["metadata"];
+                    this.data = _data["data"];
+                    this.signature = _data["signature"] ? Uint8Array.from(Array.prototype.map.call((globalThis as any).atob(_data["signature"]), (x: string) => x.charCodeAt(0)) as number[]) : _data["signature"];
+                }
+            }
+            static fromJS(data: any): ComplexScenario {
+                data = typeof data === 'object' ? data : {};
+                let result = new ComplexScenario();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["metadata"] = this.metadata;
+                data["data"] = this.data;
+                data["signature"] = this.signature ? (globalThis as any).btoa(String.fromCharCode(...(Array.from(this.signature as any) as unknown as number[]))) : this.signature;
+                return data;
+            }
+        }
+        export interface IComplexScenario {
+            metadata: { id: string; version: string; created: Date; tags: Set<string>; };
+            data: { type: string; value: string; timestamp: Date; device: { id: string; calibration: { [key: string]: number }; }; } | { type: string; name: string; severity: "low" | "medium" | "high" | "critical"; details: { key: string; value: string | bigint | number | boolean; }[]; };
+            signature?: string;
+        }
+    }
+
+}
+// numeric-types.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace NumericTypes {
+        export class NumericTypes implements INumericTypes {
+            int8Field!: number;
+            int16Field?: number;
+            uint32Field?: number;
+            uint64Field?: bigint;
+            decimalField!: string;
+            float32Field?: number;
+            float64Field?: number;
+            constructor(data?: INumericTypes) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.int8Field = _data["int8Field"];
+                    this.int16Field = _data["int16Field"];
+                    this.uint32Field = _data["uint32Field"];
+                    this.uint64Field = _data["uint64Field"];
+                    this.decimalField = _data["decimalField"];
+                    this.float32Field = _data["float32Field"];
+                    this.float64Field = _data["float64Field"];
+                }
+            }
+            static fromJS(data: any): NumericTypes {
+                data = typeof data === 'object' ? data : {};
+                let result = new NumericTypes();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["int8Field"] = this.int8Field;
+                data["int16Field"] = this.int16Field;
+                data["uint32Field"] = this.uint32Field;
+                data["uint64Field"] = this.uint64Field;
+                data["decimalField"] = this.decimalField;
+                data["float32Field"] = this.float32Field;
+                data["float64Field"] = this.float64Field;
+                return data;
+            }
+        }
+        export interface INumericTypes {
+            int8Field: number;
+            int16Field?: number;
+            uint32Field?: number;
+            uint64Field?: bigint;
+            decimalField: string;
+            float32Field?: number;
+            float64Field?: number;
+        }
+    }
+
+}
+// nested-objects.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace NestedObjects {
+        export class NestedObjects implements INestedObjects {
+            person!: { firstName: string; lastName: string; address: { street: string; city: string; country: string; coordinates: { latitude: number; longitude: number; }; }; phoneNumbers: { type: "home" | "work" | "mobile"; number: string; }[]; };
+            constructor(data?: INestedObjects) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.person = _data["person"];
+                }
+            }
+            static fromJS(data: any): NestedObjects {
+                data = typeof data === 'object' ? data : {};
+                let result = new NestedObjects();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["person"] = this.person;
+                return data;
+            }
+        }
+        export interface INestedObjects {
+            person: { firstName: string; lastName: string; address: { street: string; city: string; country: string; coordinates: { latitude: number; longitude: number; }; }; phoneNumbers: { type: "home" | "work" | "mobile"; number: string; }[]; };
+        }
+    }
+
+}
+// advanced-features.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace AdvancedFeatures {
+        export class AdvancedFeatures implements IAdvancedFeatures {
+            constField!: string;
+            deprecatedField?: number;
+            readOnlyField?: string;
+            writeOnlyField?: string;
+            validatedString?: string;
+            constructor(data?: IAdvancedFeatures) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.constField = _data["constField"];
+                    this.deprecatedField = _data["deprecatedField"];
+                    this.readOnlyField = _data["readOnlyField"];
+                    this.writeOnlyField = _data["writeOnlyField"];
+                    this.validatedString = _data["validatedString"];
+                }
+            }
+            static fromJS(data: any): AdvancedFeatures {
+                data = typeof data === 'object' ? data : {};
+                let result = new AdvancedFeatures();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["constField"] = this.constField;
+                data["deprecatedField"] = this.deprecatedField;
+                data["readOnlyField"] = this.readOnlyField;
+                data["writeOnlyField"] = this.writeOnlyField;
+                data["validatedString"] = this.validatedString;
+                return data;
+            }
+        }
+        export interface IAdvancedFeatures {
+            constField: string;
+            deprecatedField?: number;
+            readOnlyField?: string;
+            writeOnlyField?: string;
+            validatedString?: string;
+        }
+    }
+
+}
+// validation-constraints.struct.json
+
+// ReSharper disable InconsistentNaming
+
+namespace Corpus.Generated {
+
+export namespace ValidationConstraints {
+        export class ValidationConstraints implements IValidationConstraints {
+            constrainedString!: string;
+            enumField!: "red" | "green" | "blue" | "yellow";
+            constField?: string;
+            numberWithConstraints?: number;
+            exclusiveRangeNumber?: number;
+            constructor(data?: IValidationConstraints) {
+                if (data) {
+                    for (var property in data) {
+                        if (data.hasOwnProperty(property))
+                            (this as any)[property] = (data as any)[property];
+                    }
+                }
+            }
+            init(_data?: any) {
+                if (_data) {
+                    this.constrainedString = _data["constrainedString"];
+                    this.enumField = _data["enumField"];
+                    this.constField = _data["constField"];
+                    this.numberWithConstraints = _data["numberWithConstraints"];
+                    this.exclusiveRangeNumber = _data["exclusiveRangeNumber"];
+                }
+            }
+            static fromJS(data: any): ValidationConstraints {
+                data = typeof data === 'object' ? data : {};
+                let result = new ValidationConstraints();
+                result.init(data);
+                return result;
+            }
+            toJSON(data?: any) {
+                data = typeof data === 'object' ? data : {};
+                data["constrainedString"] = this.constrainedString;
+                data["enumField"] = this.enumField;
+                data["constField"] = this.constField;
+                data["numberWithConstraints"] = this.numberWithConstraints;
+                data["exclusiveRangeNumber"] = this.exclusiveRangeNumber;
+                return data;
+            }
+        }
+        export interface IValidationConstraints {
+            constrainedString: string;
+            enumField: "red" | "green" | "blue" | "yellow";
+            constField?: string;
+            numberWithConstraints?: number;
+            exclusiveRangeNumber?: number;
+        }
+    }
+
+}

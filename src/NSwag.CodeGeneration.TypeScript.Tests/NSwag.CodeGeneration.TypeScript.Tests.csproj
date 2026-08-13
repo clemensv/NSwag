@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NSwag.CodeGeneration.TypeScript\NSwag.CodeGeneration.TypeScript.csproj" />
+    <ProjectReference Include="..\NSwag.JsonStructure\NSwag.JsonStructure.csproj" />
     <ProjectReference Include="..\NSwag.Core.Yaml\NSwag.Core.Yaml.csproj" />
     <ProjectReference Include="..\NSwag.Generation.WebApi\NSwag.Generation.WebApi.csproj" />
   </ItemGroup>
@@ -29,6 +30,7 @@
 
   <ItemGroup>
     <Compile Include="..\NSwag.CodeGeneration.Tests\VerifyHelper.cs" Link="VerifyHelper.cs" />
+    <None Include="..\NSwag.JsonStructure.Tests\Schemas\**\*.struct.json" Link="Schemas\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

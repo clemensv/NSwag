@@ -1,0 +1,69 @@
+openapi: "3.1.0"
+info:
+  title: Non-OAuth Scopes Example
+  version: "1.0.0"
+  description: >-
+    Adapted from the OpenAPI Initiative's "Non-oAuth Scopes" example, which
+    documents custom, non-OAuth2 API-key scopes via a vendor extension on the
+    security scheme. The `Location` schema activates `JSONStructureAlternateNames`
+    to give each property both a compact wire-format alias (via the `json`
+    key) and localized display labels (via `lang:en` / `lang:de`).
+jsonSchemaDialect: https://json-structure.org/meta/extended/v0/#
+security:
+  - api_key: []
+paths:
+  /status:
+    get:
+      operationId: getStatus
+      summary: Requires the "read" API-key scope
+      security:
+        - api_key:
+            - read
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
+      description: >-
+        API keys do not carry OAuth2 scopes natively. This vendor extension
+        documents the scopes this deployment enforces out of band.
+      x-apikeyScopes:
+        - scope: read
+          description: Grants read-only access
+        - scope: write
+          description: Grants read/write access
+  schemas:
+    Location:
+      $schema: https://json-structure.org/meta/extended/v0/#
+      $uses:
+        - JSONStructureAlternateNames
+      name: Location
+      type: object
+      altnames:
+        json: location
+        "lang:en": Location
+        "lang:de": Standort
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: double
+          altnames:
+            json: lat
+            "lang:en": Latitude
+            "lang:de": Breitengrad
+        longitude:
+          type: double
+          altnames:
+            json: lon
+            "lang:en": Longitude
+            "lang:de": "L\u00e4ngengrad"

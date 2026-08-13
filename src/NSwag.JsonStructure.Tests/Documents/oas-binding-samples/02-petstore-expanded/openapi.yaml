@@ -1,0 +1,193 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore (Expanded)
+  license:
+    name: MIT
+  description: >-
+    Adapted from the OpenAPI Initiative's "petstore-expanded" example. This
+    document demonstrates the recommended, self-describing pattern: each
+    `components.schemas` entry is a JSON Structure schema resource root and
+    carries its own `$schema`. Two entries additionally activate add-ins
+    through `$uses`: `Pet` activates `JSONStructureUnits` to annotate the
+    pet's weight, and `NewPet` activates `JSONStructureValidation` to
+    constrain `name` and `tag`.
+jsonSchemaDialect: https://json-structure.org/meta/extended/v0/#
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets:
+    get:
+      description: Returns all pets from the system that the user has access to
+      operationId: findPets
+      parameters:
+        - name: tags
+          in: query
+          description: tags to filter by
+          required: false
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          schema:
+            type: int32
+      responses:
+        "200":
+          description: pet response
+          content:
+            application/json:
+              schema:
+                name: PetList
+                type: array
+                items:
+                  type:
+                    $ref: "#/definitions/Pet"
+                $uses:
+                  - JSONStructureUnits
+                  - JSONStructureValidation
+                definitions:
+                  Pet:
+                    name: Pet
+                    type: object
+                    required:
+                      - id
+                      - name
+                    properties:
+                      id:
+                        type: int64
+                      name:
+                        type: string
+                        minLength: 1
+                      tag:
+                        type: string
+                        pattern: "^[a-z][a-z0-9-]*$"
+                      weight:
+                        type: double
+                        ucumUnit: "kg"
+                        symbol: "kg"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      description: Creates a new pet in the store
+      operationId: addPet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewPet"
+      responses:
+        "200":
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /pets/{id}:
+    get:
+      description: Returns a pet based on a single ID
+      operationId: find pet by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: int64
+      responses:
+        "200":
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      description: deletes a single pet based on the ID supplied
+      operationId: deletePet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: int64
+      responses:
+        "204":
+          description: pet deleted
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    NewPet:
+      $schema: https://json-structure.org/meta/extended/v0/#
+      $uses:
+        - JSONStructureValidation
+      name: NewPet
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        tag:
+          type: string
+          pattern: "^[a-z][a-z0-9-]*$"
+    Pet:
+      $schema: https://json-structure.org/meta/extended/v0/#
+      $uses:
+        - JSONStructureUnits
+        - JSONStructureValidation
+      name: Pet
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: int64
+        name:
+          type: string
+          minLength: 1
+        tag:
+          type: string
+          pattern: "^[a-z][a-z0-9-]*$"
+        weight:
+          type: double
+          ucumUnit: "kg"
+          symbol: "kg"
+    Error:
+      $schema: https://json-structure.org/meta/core/v0/#
+      name: Error
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: int32
+        message:
+          type: string

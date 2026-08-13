@@ -1,0 +1,127 @@
+openapi: "3.1.0"
+info:
+  title: Cross-Schema Library Import
+  version: "1.0.0"
+  description: >-
+    A custom sample (not adapted from an existing OpenAPI Initiative
+    example) demonstrating the `JSONStructureImport` add-in's `$import` and
+    `$importdefs` keywords for reuse across a shared schema library file
+    (`common-types.json`), and the `JSONStructureConditionalComposition`
+    add-in's `if`/`then` keywords for a conditionally-required property. Both
+    schemas below select the JSON Structure validation meta-schema, under
+    which all five companion add-ins (`JSONStructureImport`,
+    `JSONStructureValidation`, `JSONStructureConditionalComposition`,
+    `JSONStructureUnits`, `JSONStructureAlternateNames`) are active by
+    default, so no `$uses` override is needed.
+jsonSchemaDialect: https://json-structure.org/meta/validation/v0/#
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Create an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Order"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /orders/{orderId}/shipping-label:
+    get:
+      operationId: getShippingLabel
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingLabel"
+components:
+  schemas:
+    Order:
+      $schema: https://json-structure.org/meta/validation/v0/#
+      name: Order
+      type: object
+      $import: "https://example.com/schemas/common-types.json"
+      description: >-
+        `$import` at the schema root brings in every definition from
+        common-types.json's root namespace: the imported document's root
+        type (`Address`) and its `Money` definition both become available
+        locally, as `#/definitions/Address` and `#/definitions/Money`.
+      properties:
+        orderId:
+          type: uuid
+        paymentMethod:
+          type: string
+          enum:
+            - invoice
+            - card
+        total:
+          type: { $ref: "#/definitions/Money" }
+        billingAddress:
+          type: { $ref: "#/definitions/Address" }
+      required:
+        - orderId
+        - paymentMethod
+        - total
+      if:
+        type: object
+        properties:
+          paymentMethod:
+            type: string
+            const: invoice
+        required:
+          - paymentMethod
+      then:
+        type: object
+        properties:
+          billingAddress:
+            type: { $ref: "#/definitions/Address" }
+        required:
+          - billingAddress
+    ShippingLabel:
+      $schema: https://json-structure.org/meta/validation/v0/#
+      name: ShippingLabel
+      type: object
+      $importdefs: "https://example.com/schemas/common-types.json"
+      description: >-
+        `$importdefs` brings in only the `definitions` section of
+        common-types.json (`Money`), not its root type (`Address`); the
+        recipient address is instead declared locally as `properties.to`.
+      properties:
+        orderId:
+          type: uuid
+        shippingCost:
+          type: { $ref: "#/definitions/Money" }
+        to:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            postalCode:
+              type: string
+            country:
+              type: string
+          required:
+            - street
+            - city
+            - postalCode
+            - country
+      required:
+        - orderId
+        - shippingCost
+        - to

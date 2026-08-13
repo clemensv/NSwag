@@ -39,7 +39,7 @@ namespace NSwag.Commands
                     throw new ArgumentException("The argument 'Input' was empty.");
                 }
 
-                document = await ReadSwaggerDocumentAsync(input);
+                document = await ReadSwaggerDocumentAsync(input, JsonStructure).ConfigureAwait(false);
             }
 
             if (ServiceHost == ".")

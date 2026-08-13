@@ -196,8 +196,8 @@ namespace NSwag.Generation.Processors
                             _settings.SchemaSettings.ReflectionService.GetDescription(contextualReturnType, _settings.DefaultResponseReferenceTypeNullHandling, _settings.SchemaSettings).IsNullable;
 
                     response.IsNullableRaw = isResponseNullable;
-                    response.Schema = context.SchemaGenerator.GenerateWithReferenceAndNullability<JsonSchema>(
-                        contextualReturnType, isResponseNullable, context.SchemaResolver);
+                    response.Schema = context.Settings.GenerateSchema(
+                        context.Document, contextualReturnType, isResponseNullable, context.SchemaResolver, context.SchemaGenerator as OpenApiSchemaGenerator);
                 }
 
                 context.OperationDescription.Operation.Responses[httpStatusCode] = response;

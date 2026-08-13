@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-structure.org/meta/core/v0/#",
+  "$id": "https://schemas.example.com/invalid-extends",
+  "name": "InvalidExtends",
+  "type": "object",
+  "$extends": "#/definitions/Base",
+  "properties": {
+    "value": { "type": "string" }
+  },
+  "definitions": {
+    "Base": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" }
+      }
+    }
+  }
+}
